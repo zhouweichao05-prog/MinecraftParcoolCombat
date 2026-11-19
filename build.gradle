@@ -74,6 +74,14 @@ dependencies {
     // Mandatory runtime dependencies of Better Combat 1.9.0+1.20.1 (see BETTERCOMBAT_API_AUDIT.md).
     implementation fg.deobf('local.playeranimator:player-animation-lib-forge:1.0.2-rc1+1.20')
     implementation fg.deobf('local.clothconfig:cloth-config:11.1.136-forge')
+
+    // Unit tests only. JUnit is not part of the mod runtime.
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+}
+
+tasks.named('test').configure {
+    useJUnitPlatform()
 }
 
 tasks.withType(JavaCompile).configureEach {

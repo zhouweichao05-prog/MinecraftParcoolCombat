@@ -1,19 +1,27 @@
 package com.MrGhost.parkourCombat;
 
+import com.MrGhost.parkourCombat.adapter.ParCoolActionAdapter;
+import com.MrGhost.parkourCombat.adapter.ParkourAdapterEvents;
+import com.MrGhost.parkourCombat.adapter.server.ServerParCoolAdapter;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 /**
  * ParkourCombat 2.0 entry point.
  *
- * <p>Scaffold stage only: no parkour adapter, no combat logic, no Mixin.
- * The next stage will add the read-only ParCool adapter under
- * {@code com.MrGhost.parkourCombat.adapter}.</p>
+ * <p>Phase 02 registers a read-only ParCool adapter. No combat, damage, affix,
+ * animation or network implementation is present.</p>
  */
 @Mod(ParkourCombat.MOD_ID)
 public final class ParkourCombat {
     public static final String MOD_ID = "parkourcombat";
 
     public ParkourCombat() {
-        // Intentionally empty: scaffold stage.
+        ParCoolActionAdapter adapter = FMLEnvironment.dist.isClient()
+                ? new ParCoolActionAdapter(true)
+                : new ServerParCoolAdapter();
+        ParkourAdapterEvents.init(adapter);
+        MinecraftForge.EVENT_BUS.register(ParkourAdapterEvents.class);
     }
 }
