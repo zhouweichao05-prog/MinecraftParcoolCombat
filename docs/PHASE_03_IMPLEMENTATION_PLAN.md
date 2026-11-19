@@ -1,7 +1,7 @@
 # PHASE_03_IMPLEMENTATION_PLAN — MotionTracker 与玩家运动数据系统
 
 - 阶段：03
-- 文档状态：**DESIGNED（仅规划，尚未编码）**
+- 文档状态：**IMPLEMENTED（见 PHASE_03_IMPLEMENTATION_REPORT；本文件保留设计）**
 - 前置阶段：02，状态 `CONDITIONALLY_ACCEPTED`，HEAD `3389c13`
 - 目标：建立每玩家、每逻辑端每 tick 最多一次的低开销运动采样，输出不可变 `MotionSnapshot`，并提供有界历史缓存。
 - 本阶段不实现：Better Combat 桥接、特殊攻击、伤害、霸体、词条、装备、新动画、大规模网络同步、Mixin。
@@ -68,17 +68,17 @@ MotionSnapshot
 - double displacementX/Y/Z        // 相对上一个有效采样的位移
 - int continuousMotionTicks       // 连续运动 tick
 - boolean onGround
-- boolean falling                  // 来自 FallSnapshot.active()
-- ParkourActionState actionState   // 主活动动作；无则为 null
-- ParkourStateSource source
-- ParkourTrust trust
+- FallSnapshot fallSnapshot       // 保留 FALL 自己的 source/trust
+- ParkourActionState actionState  // 主活动动作；无则为 null，保留自身 source/trust
+- ParkourStateSource source       // 仅运动学
+- ParkourTrust trust              // 仅运动学
 ```
 
 设计说明：
 
 - **“当前位移”**：用 `position` 表示当前绝对位置；`displacementX/Y/Z` 表示相对上一有效采样的每 tick 位移。二者语义分开，避免把“位置”和“速度”混为一谈。
 - **“三维速度”**：使用三个速度分量；`horizontalSpeed` 是派生值，不重复存储三维速度向量对象。
-- **水平加速度**：取水平速度变化量的模长；不除时间，因为固定为 per-tick 采样。
+- **水平加速度**：`sqrt(dvx²+dvz²)/deltaTicks`；`deltaTicks=1` 时即每 tick 速度变化。
 - **垂直加速度**：带符号，便于识别起跳/下落/落地。
 - **运动方向**：水平单位向量；速度为 0 或低于阈值时不伪造方向，使用上一稳定方向做短暂保持。
 - **主活动动作**：只允许一个 `ParkourActionState`。优先级：
@@ -128,7 +128,8 @@ MotionHistory history
 - 首帧（无 previous）：建立基线，返回零加速度快照。
 - `dead`、`dimensionChanged`。
 - 位置单 tick 位移平方 > `8^2`（传送/异常位移）。
-- `gameTime` 不是 previous + 1（丢 tick、重登、实体重建、跨维度）。
+- `gameTime` 小于 previous（回退）或间隔 >5 tick（大间隙）。
+- 同一 gameTick 的重复帧：忽略，不清历史；不产生新快照。
 - `teleported` 标志为 true。
 
 重置行为：

@@ -1,7 +1,7 @@
 # PHASE_03_TEST_PLAN — 运动数据系统验证计划
 
 - 阶段：03
-- 文档状态：**DESIGNED（仅规划）**
+- 文档状态：**PARTIALLY TESTED（单元 48/48；运行时仅空闲采样）**
 - 目标：验证 `MotionSnapshot` 的数值正确性、采样边界、生命周期、性能和双端可信度。
 - 前置：阶段 02 `CONDITIONALLY_ACCEPTED`；不重新测试/修改阶段 02 已通过语义。
 
@@ -111,12 +111,12 @@
 
 | 功能 | DESIGNED | IMPLEMENTED | COMPILED | TESTED | SERVER-TESTED | VERIFIED |
 |---|---|---|---|---|---|---|
-| MotionSnapshot |  |  |  |  |  |  |
-| MotionAccumulator |  |  |  |  |  |  |
-| MotionHistory |  |  |  |  |  |  |
-| MotionTracker 接入 |  |  |  |  |  |  |
-| 客户端采样 |  |  |  |  |  |  |
-| 服务端采样 |  |  |  |  |  |  |
-| 生命周期清理 |  |  |  |  |  |  |
+| MotionSnapshot | ✓ | ✓ | ✓ | ✓（单元） | — | — |
+| MotionAccumulator | ✓ | ✓ | ✓ | ✓（18 单元） | — | — |
+| MotionHistory | ✓ | ✓ | ✓ | ✓（3 单元） | — | — |
+| MotionTracker 接入 | ✓ | ✓ | ✓ | ✓（空闲采样） | ✓（启动级） | — |
+| 客户端采样 | ✓ | ✓ | ✓ | ✓（空闲） | — | — |
+| 服务端采样 | ✓ | ✓ | ✓ | ✓（集成空闲） | ✓（启动级） | — |
+| 生命周期清理 | ✓ | ✓ | ✓ | ✓（单元 clear） | — | — |
 
-> 当前全部为 DESIGNED；编码后按实际结果填写。
+> 当前为部分 TESTED；真实移动/传送/维度/死亡/多人仍未验证。

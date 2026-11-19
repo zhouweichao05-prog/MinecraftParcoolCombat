@@ -1,7 +1,7 @@
 # PHASE_03_FILE_CHANGE_PLAN — 文件变更清单
 
 - 阶段：03
-- 文档状态：**DESIGNED（仅规划，尚未改动源码）**
+- 文档状态：**IMPLEMENTED（见 PHASE_03_IMPLEMENTATION_REPORT；实际文件与清单一致）**
 - 前置 HEAD：`73ed388`（阶段 02 验收记录提交）
 - 原则：最小改动、复用阶段 02、不改变动作/FALL 语义。
 
