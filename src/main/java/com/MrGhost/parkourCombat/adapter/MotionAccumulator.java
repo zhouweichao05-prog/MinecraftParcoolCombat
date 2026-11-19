@@ -22,6 +22,9 @@ public final class MotionAccumulator {
 
     private final MotionHistory history;
     private MotionFrame previous;
+    private double previousVelocityX;
+    private double previousVelocityY;
+    private double previousVelocityZ;
     private double lastDirectionX;
     private double lastDirectionZ;
     private int directionHoldTicks;
@@ -62,7 +65,7 @@ public final class MotionAccumulator {
             return firstSample(frame, fallSnapshot, actionState, source, trust);
         }
 
-        long deltaTicks = frame.gameTime() - previous.gameTime();
+        long deltaTicks = frame.sampleTick() - previous.sampleTick();
         if (deltaTicks == 0L) {
             // A duplicate PlayerTick event for the same game tick must not
             // clear an otherwise valid history.
@@ -93,6 +96,16 @@ public final class MotionAccumulator {
         double velocityX = frame.velocityX();
         double velocityY = frame.velocityY();
         double velocityZ = frame.velocityZ();
+
+        // ServerPlayer#getDeltaMovement can be zero even while the server
+        // accepts position changes. Server-observed position deltas are the
+        // authoritative kinematic source, so derive velocity from them.
+        if (source == ParkourStateSource.SERVER_NATIVE) {
+            velocityX = dx / dt;
+            velocityY = dy / dt;
+            velocityZ = dz / dt;
+        }
+
         double horizontalSpeed = Math.hypot(velocityX, velocityZ);
 
         if (gap) {
@@ -105,9 +118,9 @@ public final class MotionAccumulator {
         updateDirection(horizontalSpeed, velocityX, velocityZ);
         updateContinuousMotion(horizontalSpeed, velocityY, gap);
 
-        double deltaVx = velocityX - previous.velocityX();
-        double deltaVy = velocityY - previous.velocityY();
-        double deltaVz = velocityZ - previous.velocityZ();
+        double deltaVx = velocityX - previousVelocityX;
+        double deltaVy = velocityY - previousVelocityY;
+        double deltaVz = velocityZ - previousVelocityZ;
         double horizontalAcceleration =
                 Math.sqrt(deltaVx * deltaVx + deltaVz * deltaVz) / dt;
         double verticalAcceleration = deltaVy / dt;
@@ -116,7 +129,7 @@ public final class MotionAccumulator {
         double displacementZ = dz / dt;
 
         MotionSnapshot snapshot = new MotionSnapshot(
-                frame.gameTime(),
+                frame.sampleTick(),
                 frame.position(),
                 velocityX,
                 velocityY,
@@ -138,6 +151,9 @@ public final class MotionAccumulator {
         );
 
         previous = frame;
+        previousVelocityX = velocityX;
+        previousVelocityY = velocityY;
+        previousVelocityZ = velocityZ;
         history.add(snapshot);
         return snapshot;
     }
@@ -175,22 +191,31 @@ public final class MotionAccumulator {
                                        ParkourStateSource source,
                                        ParkourTrust trust) {
         previous = frame;
-        double horizontalSpeed = Math.hypot(frame.velocityX(), frame.velocityZ());
+        double velocityX = source == ParkourStateSource.SERVER_NATIVE
+                ? 0.0D : frame.velocityX();
+        double velocityY = source == ParkourStateSource.SERVER_NATIVE
+                ? 0.0D : frame.velocityY();
+        double velocityZ = source == ParkourStateSource.SERVER_NATIVE
+                ? 0.0D : frame.velocityZ();
+        previousVelocityX = velocityX;
+        previousVelocityY = velocityY;
+        previousVelocityZ = velocityZ;
+        double horizontalSpeed = Math.hypot(velocityX, velocityZ);
         lastDirectionX = 0.0D;
         lastDirectionZ = 0.0D;
         directionHoldTicks = 0;
         if (horizontalSpeed >= MIN_HORIZONTAL_SPEED) {
-            lastDirectionX = frame.velocityX() / horizontalSpeed;
-            lastDirectionZ = frame.velocityZ() / horizontalSpeed;
+            lastDirectionX = velocityX / horizontalSpeed;
+            lastDirectionZ = velocityZ / horizontalSpeed;
             directionHoldTicks = DIRECTION_HOLD_TICKS;
         }
 
         MotionSnapshot snapshot = new MotionSnapshot(
-                frame.gameTime(),
+                frame.sampleTick(),
                 frame.position(),
-                frame.velocityX(),
-                frame.velocityY(),
-                frame.velocityZ(),
+                velocityX,
+                velocityY,
+                velocityZ,
                 horizontalSpeed,
                 lastDirectionX,
                 lastDirectionZ,
@@ -247,6 +272,9 @@ public final class MotionAccumulator {
 
     private void reset(String reason) {
         previous = null;
+        previousVelocityX = 0.0D;
+        previousVelocityY = 0.0D;
+        previousVelocityZ = 0.0D;
         lastDirectionX = 0.0D;
         lastDirectionZ = 0.0D;
         directionHoldTicks = 0;

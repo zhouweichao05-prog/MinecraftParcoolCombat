@@ -35,7 +35,8 @@ public final class MotionTracker {
     }
 
     public void tick(Player player, long gameTime, ParkourActionState actionState) {
-        if (latestSnapshot != null && latestSnapshot.sampleTick() == gameTime) {
+        long sampleTick = player.tickCount;
+        if (latestSnapshot != null && latestSnapshot.sampleTick() == sampleTick) {
             // Guard against a duplicate PlayerTick event for the same tick.
             return;
         }
@@ -65,7 +66,7 @@ public final class MotionTracker {
         FallSnapshot fallSnapshot = stateMachine.snapshot(fallSource, fallTrust);
 
         MotionFrame frame = new MotionFrame(
-                gameTime,
+                sampleTick,
                 current,
                 movement.x,
                 movement.y,

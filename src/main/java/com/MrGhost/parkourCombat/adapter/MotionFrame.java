@@ -7,7 +7,7 @@ package com.MrGhost.parkourCombat.adapter;
  * coupling the pure motion calculations to Minecraft classes.</p>
  */
 public record MotionFrame(
-        long gameTime,
+        long sampleTick,
         ParkourPosition position,
         double velocityX,
         double velocityY,

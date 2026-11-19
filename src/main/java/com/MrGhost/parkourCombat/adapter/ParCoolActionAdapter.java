@@ -102,6 +102,12 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         if (!enabled || !isTrackable(player)) {
             return;
         }
+        if (player.isDeadOrDying()) {
+            // The death event normally removes the entry; this also covers the
+            // death-screen ticks before respawn and avoids repeated DEAD resets.
+            remove(player.getUUID(), "DEATH_TICK");
+            return;
+        }
 
         PlayerTrackers trackers = getOrCreate(player);
         ResourceKey<Level> dimension = player.level().dimension();

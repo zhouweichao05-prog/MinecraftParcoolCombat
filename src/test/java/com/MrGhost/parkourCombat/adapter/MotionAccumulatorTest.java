@@ -11,8 +11,8 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class MotionAccumulatorTest {
-    private static final ParkourStateSource MOTION_SOURCE = ParkourStateSource.SERVER_NATIVE;
-    private static final ParkourTrust MOTION_TRUST = ParkourTrust.HIGH;
+    private static final ParkourStateSource MOTION_SOURCE = ParkourStateSource.CLIENT_LOCAL;
+    private static final ParkourTrust MOTION_TRUST = ParkourTrust.MEDIUM;
 
     @Test
     void stationaryFirstSampleHasZeroDerivedValues() {
@@ -208,6 +208,39 @@ class MotionAccumulatorTest {
     }
 
     @Test
+    void serverVelocityUsesPositionDeltaWhenRawVelocityIsZero() {
+        MotionAccumulator accumulator = new MotionAccumulator();
+        accumulator.accept(frame(0L, 0, 0, 0, 0, 0, 0, false),
+                fall(false), null, ParkourStateSource.SERVER_NATIVE, ParkourTrust.HIGH);
+
+        MotionSnapshot snapshot = accumulator.accept(
+                frame(1L, 0.3D, 0, 0.4D, 0, 0, 0, false),
+                fall(false), null, ParkourStateSource.SERVER_NATIVE, ParkourTrust.HIGH);
+
+        assertEquals(0.5D, snapshot.horizontalSpeed(), 1.0E-9);
+        assertEquals(0.6D, snapshot.directionX(), 1.0E-9);
+        assertEquals(0.8D, snapshot.directionZ(), 1.0E-9);
+        assertEquals(0.5D, snapshot.horizontalAcceleration(), 1.0E-9);
+        assertEquals(1, snapshot.continuousMotionTicks());
+    }
+
+    @Test
+    void serverIdleDoesNotTreatRawGravityAsMotion() {
+        MotionAccumulator accumulator = new MotionAccumulator();
+        MotionFrame idle = frame(0L, 0, 0, 0, 0, -0.0784D, 0, true);
+        MotionSnapshot first = accumulator.accept(
+                idle, fall(false), null, ParkourStateSource.SERVER_NATIVE, ParkourTrust.HIGH);
+        assertEquals(0.0D, first.velocityY(), 1.0E-9);
+
+        MotionSnapshot second = accumulator.accept(
+                frame(1L, 0, 0, 0, 0, -0.0784D, 0, true),
+                fall(false), null, ParkourStateSource.SERVER_NATIVE, ParkourTrust.HIGH);
+        assertEquals(0.0D, second.velocityY(), 1.0E-9);
+        assertEquals(0.0D, second.verticalAcceleration(), 1.0E-9);
+        assertEquals(0, second.continuousMotionTicks());
+    }
+
+    @Test
     void trustIsolationKeepsFallAndActionSources() {
         MotionAccumulator accumulator = new MotionAccumulator();
         FallSnapshot fall = new FallSnapshot(
@@ -234,10 +267,10 @@ class MotionAccumulatorTest {
 
         MotionSnapshot snapshot = accumulator.accept(
                 frame(0L, 0, 0, 0, 0, 0, 0, false),
-                fall, action, MOTION_SOURCE, MOTION_TRUST);
+                fall, action, ParkourStateSource.SERVER_NATIVE, ParkourTrust.HIGH);
 
-        assertEquals(MOTION_SOURCE, snapshot.source());
-        assertEquals(MOTION_TRUST, snapshot.trust());
+        assertEquals(ParkourStateSource.SERVER_NATIVE, snapshot.source());
+        assertEquals(ParkourTrust.HIGH, snapshot.trust());
         assertEquals(ParkourStateSource.VANILLA_DERIVED, snapshot.fallSnapshot().source());
         assertEquals(ParkourTrust.HIGH, snapshot.fallSnapshot().trust());
         assertEquals(ParkourStateSource.PARCOOL_SYNCED, snapshot.actionState().source());
