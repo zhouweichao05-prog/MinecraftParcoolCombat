@@ -1,7 +1,7 @@
 # PHASE_03_TEST_CHECKLIST — 运动数据客户端/服务端人工验证清单
 
 - 阶段：03
-- 状态：**PARTIALLY TESTED（仅空闲采样）**
+- 状态：**PARTIALLY TESTED（动态基础通过；传送/维度/多人未测）**
 - 代码提交：`f3dc5f1`
 - 关联：[PHASE_03_TEST_REPORT.md](PHASE_03_TEST_REPORT.md)
 
@@ -40,21 +40,21 @@ actionType=... actionPhase=... actionSource=... actionTrust=...
 | ID | 场景 | 预期 | 结果 |
 |---|---|---|---|
 | M-01 | 静止 2 秒 | hSpeed≈0，movingTicks=0，onGround=true | **PASS（空闲采样）** |
-| M-02 | 步行/冲刺 | hSpeed 随速度变化，方向与移动方向一致 | NOT TESTED |
-| M-03 | 左右转向 | 方向平滑改变，不因短暂静止跳变 | NOT TESTED |
-| M-04 | 跳跃上升 | vy>0；不误报 FALL | NOT TESTED |
-| M-05 | 自由下落 | vy<0；FALL=FALLING | NOT TESTED |
-| M-06 | 落地 | onGround=true；FALL_END；连续运动归零 | NOT TESTED |
+| M-02 | 步行/冲刺 | hSpeed 随速度变化，方向与移动方向一致 | **PASS（17:16 复测）** |
+| M-03 | 左右转向 | 方向平滑改变，不因短暂静止跳变 | **PASS（基础观察）** |
+| M-04 | 跳跃上升 | vy>0；不误报 FALL | **PASS（基础观察）** |
+| M-05 | 自由下落 | vy<0；FALL=FALLING | **PASS（基础观察）** |
+| M-06 | 落地 | onGround=true；FALL_END；连续运动归零 | **PASS（基础观察）** |
 | M-07 | 短暂停步再走 | 方向保持最多 5 tick，不立即反向/归零 | NOT TESTED |
-| M-08 | 连续跑动/跳跃 | movingTicks 连续增加；静止归零 | NOT TESTED |
+| M-08 | 连续跑动/跳跃 | movingTicks 连续增加；静止归零 | **PASS（movingTicks 10→96）** |
 | M-09 | 历史窗口 | 连续采样后可查询最多 20 条；越界为 0 | NOT TESTED（仅单元） |
 | M-10 | 同维度传送 | 无巨大 hAccel/vAccel；历史清空；下一帧基线 | NOT TESTED |
 | M-11 | 放置/破坏方块/掉 tick | 不产生跨间隔虚假加速度 | NOT TESTED |
-| M-12 | 死亡/切维度/退出 | 无残留 MotionTracker/历史 | NOT TESTED |
-| M-13 | 跑酷动作中 | actionType 按 WALL_RUN > WALL_JUMP > VAULT > SLIDE > FAST_RUN | NOT TESTED（仅单元） |
+| M-12 | 死亡/切维度/退出 | 无残留 MotionTracker/历史 | **PASS（死亡/退出）；维度 NOT TESTED** |
+| M-13 | 跑酷动作中 | actionType 按 WALL_RUN > WALL_JUMP > VAULT > SLIDE > FAST_RUN | **PASS（观察到 FAST_RUN/VAULT/WALL_RUN/SLIDE；优先级边界未穷举）** |
 | M-14 | 无动作 | actionType=NONE，快照仍有效 | **PASS（空闲采样）** |
-| M-15 | 可信度隔离 | 客户端 motion CLIENT_LOCAL/MEDIUM；FALL/ParkCool 各自 trust | **PASS（单元 + 空闲采样）** |
-| M-16 | 双端 source | 服务端 motion SERVER_NATIVE/HIGH；客户端 CLIENT_LOCAL/MEDIUM | **PASS（空闲采样）** |
+| M-15 | 可信度隔离 | 客户端 motion CLIENT_LOCAL/MEDIUM；FALL/ParkCool 各自 trust | **PASS（单元 + 动态）** |
+| M-16 | 双端 source | 服务端 motion SERVER_NATIVE/HIGH；客户端 CLIENT_LOCAL/MEDIUM | **PASS（动态）** |
 | M-17 | 专用服务器真实玩家 | 服务端有采样，客户端数据不参与服务端 | NOT TESTED |
 | M-18 | 多人 | 每个玩家独立历史，无串线 | NOT TESTED |
 

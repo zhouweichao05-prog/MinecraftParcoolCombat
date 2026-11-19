@@ -130,7 +130,8 @@ WALL_RUN > WALL_JUMP > VAULT > SLIDE > FAST_RUN
 - 开发客户端（quick-play 测试世界）：成功进入世界；最终空闲采样 18 条（客户端 9、集成服务端 9），无 reset、无 FATAL。
 - 专用服务器：`Done (7.812s)`，`side=SERVER` 初始化成功。
 - 修复前实测日志（用户提供，16:02）：98 条客户端 + 98 条服务端；客户端有运动值，服务端 `getDeltaMovement` 为 0，且死亡后 DEAD reset 每 tick 重复。该日志用于定位缺陷，不作为修复后通过证据。
-- 最终采样证据：[runClient-phase03-final.debug.log](logs/runClient-phase03-final.debug.log)、[runServer-phase03-final.latest.log](logs/runServer-phase03-final.latest.log)
+- 修复后动态复测：142 条采样（71/71），0 reset，双端 hSpeed 非零；死亡清理各一次。
+- 最终采样证据：[runClient-phase03-retest-motion.log](logs/runClient-phase03-retest-motion.log)、[runServer-phase03-final.latest.log](logs/runServer-phase03-final.latest.log)
 - 修复前证据：[runClient-phase03-prefix-movement.log](logs/runClient-phase03-prefix-movement.log)
 
 ## 6. 实际采样示例
@@ -164,15 +165,30 @@ fallPhase=NOT_FALLING fallSource=VANILLA_DERIVED fallTrust=HIGH
 3. **客户端 level gameTime 导致 TICK_INVALID**：客户端 `Level#getGameTime` 在加载/同步时出现重复/回退，导致历史被清。修复：采样 tick 改用 `Player#tickCount`；修复后空闲采样无 reset。
 4. **服务端空闲虚假 vAccel=0.0784**：位置未变但首帧 `deltaMovement.y` 为负；修复后服务端首帧有效速度为 0，空闲 vAccel=0。
 
+### 7.1 修复后动态复测（2026-11-19 17:16–17:18）
+
+- `[MotionTracker]` 共 142 条：客户端 71、集成服务端 71。
+- **0 次 reset**（无 TICK_INVALID/TICK_GAP/DEAD）。
+- 客户端与集成服务端各有 38 条 `hSpeed>0` 采样；服务端 36 条 `movingTicks>0`。
+- 服务端速度已非零，例如：
+  ```text
+  side=SERVER ... hSpeed=0.3163 ... movingTicks=10 ... source=SERVER_NATIVE trust=HIGH
+  ```
+- 实际动作：FAST_RUN、VAULT、WALL_RUN、SLIDE；FALLING/FALL_END 均出现。
+- 死亡清理：`cleanup side=SERVER reason=DEATH` + `cleanup side=CLIENT reason=DEATH_TICK` 各一次，无 DEAD reset 刷屏。
+- 退出清理双端成功。
+- 无 FATAL；仅 Patchouli/认证等既有错误。
+- 证据：[runClient-phase03-retest-motion.log](logs/runClient-phase03-retest-motion.log)
+
 ## 8. 未测试/未验证
 
-- 真实移动/冲刺/转向的数值。
-- 真实跳跃/下落/落地时的 `vy`、FALL 和连续运动。
-- 真实传送、维度切换、死亡清理。
+- 真实传送、维度切换的数值/清理（死亡清理已复测）。
 - 历史在真实运行中的 20 条覆盖行为（仅单元测试）。
-- 专用服务器真实玩家移动（仅启动 + 集成服务端空闲采样）。
+- 短暂停步方向保持、采样间隔异常的实机验证。
+- 专用服务器真实玩家移动（仅启动 + 集成服务端动态采样）。
 - 多人。
 - FALL 水/岩浆/鞘翅/攀爬/载具等阶段 02 遗留项仍 NOT TESTED。
+- 服务端 FALL 仍使用阶段 02 raw `getDeltaMovement.y`，本阶段未改其语义。
 
 ## 9. 已知实现注记
 
@@ -189,11 +205,15 @@ fallPhase=NOT_FALLING fallSource=VANILLA_DERIVED fallTrust=HIGH
 | 代码 | **IMPLEMENTED** |
 | 编译 | **COMPILED** |
 | 单元测试 | **TESTED（50/50）** |
-| 客户端实际空闲采样 | **TESTED（有限）** |
+| 客户端实际动态采样 | **TESTED（复测）** |
+| 集成服务端实际动态采样 | **TESTED（复测）** |
 | 服务端启动 | **SERVER-TESTED（启动级）** |
-| 真实移动/传送/维度/死亡 | **NOT TESTED** |
+| 死亡清理 | **TESTED（复测）** |
+| 传送/维度实机 | **NOT TESTED** |
+| 历史运行时覆盖 | **NOT TESTED（仅单元）** |
+| 专用服务器真实玩家/多人 | **NOT TESTED** |
 | 整体 | **未 VERIFIED** |
 
 ## 11. 结论
 
-阶段 03 代码已实现、编译、50 个单元测试通过；修复后客户端/集成服务端空闲采样无 reset，服务端空闲 vAccel=0。真实运动数值（尤其服务端位置推导速度）与生命周期仍需人工复测。未进入阶段 04。
+阶段 03 代码已实现、编译、50 个单元测试通过；修复后复测确认双端动态速度非零、0 reset、死亡清理不再刷屏。真实传送/维度、历史运行时覆盖、专用服务器真实玩家和多人仍未验证。未进入阶段 04。

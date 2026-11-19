@@ -16,12 +16,13 @@
 | 代码实现 | **IMPLEMENTED** |
 | 编译 | **COMPILED** |
 | 单元测试 | **TESTED（50/50 PASS）** |
-| 客户端实际空闲采样 | **TESTED（有限）** |
-| 集成服务端实际空闲采样 | **TESTED（有限）** |
+| 客户端实际动态采样 | **TESTED（复测）** |
+| 集成服务端实际动态采样 | **TESTED（复测）** |
 | 专用服务器启动 | **SERVER-TESTED（启动级）** |
-| 真实移动/转向 | **NOT TESTED** |
-| 真实跳跃/下落/落地 | **NOT TESTED** |
-| 真实传送/维度/死亡清理 | **NOT TESTED** |
+| 真实移动/转向 | **TESTED（基础观察）** |
+| 真实跳跃/下落/落地 | **TESTED（基础观察）** |
+| 真实死亡清理 | **TESTED（复测）** |
+| 真实传送/维度清理 | **NOT TESTED** |
 | 历史运行时覆盖 | **NOT TESTED（仅单元）** |
 | 多人 | **NOT TESTED** |
 | 整体 VERIFIED | **NO** |
@@ -86,7 +87,26 @@
 - **无 reset**；无 FATAL；仅有 Patchouli 指南书缺失 ERROR。
 - 日志：[runClient-phase03-final.debug.log](logs/runClient-phase03-final.debug.log)
 
-> 该证据只证明修复后空闲采样管线、双端 source/trust 和“无 reset”；不证明移动/跳跃/下落等动态数值。
+> 该证据证明修复后空闲采样管线、双端 source/trust 和“无 reset”。
+
+### 4.2 修复后动态复测（2026-11-19 17:16–17:18）
+
+- `[MotionTracker]` 共 142 条：客户端 71、集成服务端 71。
+- **0 次 reset**（无 TICK_INVALID/TICK_GAP/DEAD）。
+- 客户端 38 条、服务端 38 条 `hSpeed>0`；服务端 36 条 `movingTicks>0`。
+- 服务端示例：
+  ```text
+  side=SERVER ... hSpeed=0.3163 ... movingTicks=10
+  motionSource=SERVER_NATIVE motionTrust=HIGH
+  actionType=FAST_RUN actionSource=PARCOOL_SYNCED actionTrust=LOW
+  ```
+- 实际动作：FAST_RUN、VAULT、WALL_RUN、SLIDE；FALLING/FALL_END 均出现。
+- 死亡清理：`cleanup side=SERVER reason=DEATH`、`cleanup side=CLIENT reason=DEATH_TICK` 各一次，无 DEAD reset。
+- 退出清理双端成功。
+- 无 FATAL；仅 Patchouli/认证等既有错误。
+- 证据：[runClient-phase03-retest-motion.log](logs/runClient-phase03-retest-motion.log)
+
+> 该证据覆盖基础移动/动作/死亡清理；传送、维度、历史容量、多人仍未验证。
 
 ### 4.1 修复前动态日志
 
@@ -132,24 +152,22 @@
 
 ## 7. 未验证项
 
-- 真实移动时 `horizontalSpeed`、方向、加速度、位移。
-- 真实跳跃上升 `vy>0` 与下落 `vy<0`。
-- 真实落地 `onGround`/FALL/连续运动。
 - 真实短暂停步方向保持。
-- 真实传送、维度切换、死亡、退出清理。
+- 真实传送、维度切换清理。
 - 真实历史 20 条覆盖行为。
 - 专用服务器真实玩家移动。
 - 多人隔离/丢包。
-- 阶段 02 遗留的 FALL 环境/垂直墙跑/墙跳/CANCELLED。
+- FALL 水/岩浆/鞘翅/攀爬/载具等阶段 02 遗留项仍 NOT TESTED。
+- 服务端 FALL 仍使用阶段 02 raw `getDeltaMovement.y`，未改其语义。
 
 ## 8. 已知实现注记
 
 1. 同一 gameTick 的重复 `PlayerTickEvent` 会被忽略，避免清空历史；不同 tick 的异常间隔按规则处理。
 2. `ParkourActionSelection` 每 tick 从阶段 02 `getState` 取一次状态，产生一个 `Optional`，这是禁止修改 `ParkourActionTracker` 条件下的 API 边界；运动快照/历史/累加器本身不使用 Optional/List/Stream。
-3. 客户端世界加载瞬间曾观察到 `TICK_INVALID`/`TICK_GAP` 重置；重置后采样正常，重置会清历史。
+3. 客户端世界加载阶段曾观察到 `TICK_INVALID`/`TICK_GAP`；改用 `Player#tickCount` 后复测为 0 reset。
 
 ## 9. 结论
 
-- 单元测试和编译通过；客户端/集成服务端空闲采样验证了管线与可信度字段。
-- 真实动态数值、传送/维度/死亡、历史运行时覆盖和多人仍未验证。
+- 单元测试和编译通过；修复后复测确认双端动态速度非零、0 reset、死亡清理不刷屏。
+- 传送/维度、历史运行时覆盖、专用服务器真实玩家和多人仍未验证。
 - 整体不能标记 VERIFIED；未进入阶段 04。
