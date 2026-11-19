@@ -1,6 +1,6 @@
 # PHASE02_CLIENT_CHECKLIST — ParCoolAdapter 客户端人工验证清单
 
-- 文档状态：**IN PROGRESS（首轮已执行，部分通过）**
+- 文档状态：**IN PROGRESS（核心路径通过，边界未测）**
 - 适用阶段：阶段 02 ParCoolAdapter
 - 适用版本：ParkourCombat 2.0（阶段 02 实现）
 - 关联文档：
@@ -113,7 +113,7 @@ FALL 进入/结束额外包含：
 - 截图：FALL、墙跑、Vault 各一张（可选）
 - 每个用例填“结果 + 实际日志片段 + 备注”
 
-### 2.6 执行记录（两轮，2026-11-19）
+### 2.6 执行记录（三轮，2026-11-19）
 
 #### 第一轮：单侧 adapter（15:03–15:05，构建 `18ea034`）
 
@@ -133,15 +133,33 @@ FALL 进入/结束额外包含：
 | WALL_JUMP | 0 | 0 | NOT TESTED |
 | FALL | 36/36 LANDED | 37/37 LANDED | 双端基础落地 PASS |
 | CANCELLED | 0 | 0 | NOT TESTED |
-| INTERRUPTED | 3（2 FAST_RUN + 1 SLIDE） | 3（同左） | 相位 PASS；元数据修复后待复测 |
+| INTERRUPTED | 3（2 FAST_RUN + 1 SLIDE） | 3（同左） | 相位 PASS；第三轮确认 inferred |
 
 - 集成服务端已出现 `source=PARCOOL_SYNCED`、`trust=LOW`、`serverAuthoritative=false`。
 - 退出清理双端成功：`CLIENT_LOGOUT` 与 `SERVER LOGOUT`。
 - 本轮发现并已修复：
   - `inferred` 反向（客户端 true / 服务端 false）→ `aa96ec9` 改为 `!clientSide` 构造 tracker。
   - 服务端 FALL 错误使用 `PARCOOL_SYNCED/LOW` → 改为 `VANILLA_DERIVED/HIGH`。
-- 修复后启动验证通过，但尚未重新跑动作；需确认客户端 INTERRUPTED `inferred=false`、服务端 `inferred=true`、服务端 FALL `VANILLA_DERIVED/HIGH`。
+- 修复后启动验证通过；第三轮复测已确认客户端 INTERRUPTED `inferred=false`、服务端 `inferred=true`、服务端 FALL `VANILLA_DERIVED/HIGH`。
 - 证据：[runClient-phase02-adapter-transitions.log](logs/runClient-phase02-adapter-transitions.log)、[runClient-phase02-dual-actions.log](logs/runClient-phase02-dual-actions.log)
+
+#### 第三轮：修复后复测（15:22–15:25，构建 `aa96ec9`）
+
+| 类型 | 客户端 S/A/F/I | 服务端 S/A/F/I | 结果 |
+|---|---:|---:|---|
+| FAST_RUN | 14/14/13/1 | 14/14/13/1 | 双端 PASS |
+| SLIDE | 1/1/0/1 | 1/1/0/1 | 双端 PASS |
+| VAULT | 4/4/4/0 | 4/4/4/0 | 双端 PASS |
+| WALL_RUN_HORIZONTAL | 1/1/1/0 | 1/1/1/0 | 双端 PASS |
+| WALL_RUN_VERTICAL | 0 | 0 | NOT TESTED |
+| WALL_JUMP | 0 | 0 | NOT TESTED |
+| FALL | 23/23 LANDED | 20/20 LANDED | 基础落地 PASS |
+| CANCELLED | 0 | 0 | NOT TESTED |
+
+- 修复确认：客户端 `inferred=false`、服务端 `inferred=true`；服务端 FALL `VANILLA_DERIVED/HIGH`、客户端 FALL `VANILLA_DERIVED/MEDIUM`。
+- 退出清理双端成功。
+- 观察：服务端 FALL 20 次、客户端 23 次，全部 LANDED；差 3 次待观察，暂不判定失败。
+- 证据：[runClient-phase02-fixed-metadata.log](logs/runClient-phase02-fixed-metadata.log)
 
 ---
 

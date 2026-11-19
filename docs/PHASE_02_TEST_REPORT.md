@@ -20,8 +20,7 @@
 | 专用服务器加载/初始化 | **SERVER-TESTED（仅启动级）** |
 | 客户端启动/加载 | **PASS（启动级）** |
 | 真实跑酷动作识别 | **TESTED**（FAST_RUN/SLIDE/VAULT/WALL_RUN_HORIZONTAL，双端；垂直墙跑/墙跳未测） |
-| FALL 实机识别 | **TESTED**（LANDED，双端；其他结束原因未测） |
-| INTERRUPTED 实机 | **TESTED（相位，双端 3 次）**；`inferred` 元数据修复后待复测 |
+| FALL 实机识别 | **TESTED**（LANDED，双端；其他结束原因未测） || INTERRUPTED 实机 | **TESTED**（相位 + `inferred` 双端已验证，第三轮） |
 | CANCELLED 实机 | **NOT TESTED** |
 | 退出清理实机 | **TESTED**（CLIENT_LOGOUT + SERVER LOGOUT） |
 | 死亡/维度清理实机 | **NOT TESTED** |
@@ -218,7 +217,7 @@ gradlew --no-daemon build
 | WALL_JUMP | 0 | 0 | NOT TESTED |
 | FALL | 36 次 FALLING / 36 次 LANDED | 37 次 FALLING / 37 次 LANDED | 双端基础落地 PASS |
 | CANCELLED | 0 | 0 | NOT TESTED |
-| INTERRUPTED | 3 次（2 FAST_RUN + 1 SLIDE） | 3 次（同左） | 相位 PASS；元数据修复后待复测 |
+| INTERRUPTED | 3 次（2 FAST_RUN + 1 SLIDE） | 3 次（同左） | 相位 PASS；第三轮确认 inferred |
 
 - 服务端动作日志出现 `source=PARCOOL_SYNCED`、`trust=LOW`、`serverAuthoritative=false`，说明集成服务端 adapter 已生效。
 - 服务端 FALL 出现 `serverAuthoritative=true`；但本轮日志的 FALL `source/trust` 是 `PARCOOL_SYNCED/LOW`，属于错误元数据（应为 `VANILLA_DERIVED/HIGH`）。
@@ -228,11 +227,37 @@ gradlew --no-daemon build
 - 本轮发现并修复了两个元数据问题：
   1. `inferred` 标记反向：客户端 INTERRUPTED 显示 `inferred=true`，服务端显示 `false`；原因是 tracker 构造时传入了 `clientSide` 而不是 `!clientSide`。
   2. FALL 的服务端 source/trust 错误地沿用了动作 source/trust。
-- 上述修复已编译；由于是元数据修复，需用当前构建再跑一次动作，确认日志显示：
+- 上述修复已编译；第三轮复测已确认：
   - 客户端 INTERRUPTED `inferred=false`；
   - 服务端 INTERRUPTED `inferred=true`；
   - 服务端 FALL `source=VANILLA_DERIVED trust=HIGH`。
 - 证据：[runClient-phase02-dual-actions.log](logs/runClient-phase02-dual-actions.log)
+
+#### 第三轮：修复后复测（2026-11-19 15:22–15:25，构建 aa96ec9）
+
+- `debug.log` 共 223 行 `[ParkourAdapter]`，客户端与服务端动作相位均存在。
+- 双端计数：
+
+| 类型 | 客户端 S/A/F/I | 服务端 S/A/F/I | 结果 |
+|---|---:|---:|---|
+| FAST_RUN | 14/14/13/1 | 14/14/13/1 | 双端 PASS |
+| SLIDE | 1/1/0/1 | 1/1/0/1 | 双端 PASS |
+| VAULT | 4/4/4/0 | 4/4/4/0 | 双端 PASS |
+| WALL_RUN_HORIZONTAL | 1/1/1/0 | 1/1/1/0 | 双端 PASS |
+| WALL_RUN_VERTICAL | 0 | 0 | NOT TESTED |
+| WALL_JUMP | 0 | 0 | NOT TESTED |
+| FALL | 23 次 FALLING / 23 次 LANDED | 20 次 FALLING / 20 次 LANDED | 基础落地 PASS |
+| CANCELLED | 0 | 0 | NOT TESTED |
+
+- 修复确认：
+  - 客户端 `FAST_RUN INTERRUPTED inferred=false`。
+  - 服务端 `FAST_RUN INTERRUPTED inferred=true`。
+  - 服务端 FALL `source=VANILLA_DERIVED trust=HIGH serverAuthoritative=true`。
+  - 客户端 FALL `source=VANILLA_DERIVED trust=MEDIUM serverAuthoritative=false`。
+- 退出清理双端成功：`CLIENT_LOGOUT` + `SERVER LOGOUT`。
+- 观察：服务端 FALL 计数 20，客户端 23（差 3）；全部为 LANDED。可能是极短下落/相位采样差异，暂不能判定为错误，记录为待观察项。
+- 无 `FATAL`；仅 Patchouli 指南书错误。
+- 证据：[runClient-phase02-fixed-metadata.log](logs/runClient-phase02-fixed-metadata.log)
 
 ## 7. 状态记录
 
@@ -246,9 +271,9 @@ gradlew --no-daemon build
 | ParCoolActionAdapter / 事件 / 生命周期 | **IMPLEMENTED / COMPILED**；双端动作识别 **TESTED**；退出清理 **TESTED（双端）**；死亡/维度清理 NOT TESTED；专用服务器初始化 **SERVER-TESTED（启动级）** |
 | 真实动作识别（FAST_RUN/SLIDE/VAULT/WALL_RUN_HORIZONTAL） | **TESTED（客户端 + 集成服务端，第二轮 c1c206b）** |
 | 真实动作识别（WALL_RUN_VERTICAL/WALL_JUMP） | **NOT TESTED** |
-| FALL 实机（LANDED） | **TESTED（客户端 + 集成服务端）**；source/trust 修复后待复测 |
+| FALL 实机（LANDED） | **TESTED（客户端 + 集成服务端，第三轮）** |
 | FALL 实机（水/岩浆/鞘翅/攀爬/载具/传送/维度/死亡） | **NOT TESTED** |
-| INTERRUPTED 实机 | **TESTED（相位，双端 3 次）**；`inferred` 修复后待复测 |
+| INTERRUPTED 实机 | **TESTED（相位 + inferred，双端；第三轮）** |
 | CANCELLED 实机 | **NOT TESTED** |
 | 退出清理（CLIENT_LOGOUT + SERVER LOGOUT） | **TESTED** |
 | 死亡/维度清理实机 | **NOT TESTED** |
@@ -261,13 +286,12 @@ gradlew --no-daemon build
 1. `WALL_RUN_VERTICAL`、`WALL_JUMP` 真实识别。
 2. FALL 在水/岩浆/鞘翅/攀爬/载具/传送/维度/死亡中的结束原因。
 3. `CANCELLED`（客户端 TryToStart/TryToContinue 取消）实机行为。
-4. 修复后的 `INTERRUPTED.inferred` 元数据（客户端 false / 服务端 true）复测。
-5. 修复后的服务端 FALL `source=VANILLA_DERIVED/trust=HIGH` 复测。
-6. 服务端超时启发式的实际误判率。
-7. 死亡、维度切换清理的实机验证。
-8. 多人服务器（双客户端）隔离与同步。
-9. 服务端 FALL 与客户端 FALL 的 `fallDistance` 一致性。
-10. 墙面方向（ParCool 3.4.3.3 无公开 getter，明确不提供）。
+4. 服务端/客户端 FALL 计数差（第三轮 20 vs 23）与极短下落采样差异。
+5. 服务端超时启发式的实际误判率。
+6. 死亡、维度切换清理的实机验证。
+7. 多人服务器（双客户端）隔离与同步。
+8. 服务端 FALL 与客户端 FALL 的 `fallDistance` 一致性。
+9. 墙面方向（ParCool 3.4.3.3 无公开 getter，明确不提供）。
 
 ## 9. 用户人工测试步骤
 
@@ -306,12 +330,13 @@ $env:JAVA_HOME='C:\Program Files\Java\jdk-17'
 5. 服务端无法精确区分自然结束/取消/中断；只能 FINISHED + 证据化 INTERRUPTED/UNKNOWN。
 6. 墙面方向不可得；`directionAvailable=false`，不伪造。
 7. Patchouli 缺失错误仅指南书数据，未修改 ParCool 解决。
-8. 第二轮真人测试（15:13–15:14，构建 `c1c206b`）已覆盖双端 FAST_RUN/SLIDE/VAULT/WALL_RUN_HORIZONTAL/FALL-LANDED/INTERRUPTED/退出清理；`aa96ec9` 的元数据修复尚需一次动作复测。
+8. 第二轮真人测试（15:13–15:14，构建 `c1c206b`）已覆盖双端 FAST_RUN/SLIDE/VAULT/WALL_RUN_HORIZONTAL/FALL-LANDED/INTERRUPTED/退出清理；第三轮（15:22–15:25，`aa96ec9`）确认 `inferred` 与 FALL source/trust 修复正确。
+9. 第三轮服务端 FALL 20 次、客户端 23 次，全部 LANDED；差 3 次可能是极短下落/采样差异，记录为待观察项，不据此判定失败。
 
 ## 11. 结论
 
 - ParCoolAdapter 已实现并编译通过；21 个单元测试通过；服务端与客户端均能加载 adapter。
-- 两轮真人客户端日志已确认 FAST_RUN、SLIDE、VAULT、WALL_RUN_HORIZONTAL、FALL-LANDED、INTERRUPTED 的相位识别，以及客户端/集成服务端 `PARCOOL_SYNCED` 和双端退出清理。
-- 第二轮日志暴露的 `inferred` 反向和 FALL source/trust 错误已在 `aa96ec9` 修复；修复后启动验证通过，但尚未重新跑动作确认新元数据。
-- 垂直墙跑、墙跳、CANCELLED、FALL 其他结束原因、死亡/维度清理、多人仍未验证。
+- 三轮真人客户端日志已确认 FAST_RUN、SLIDE、VAULT、WALL_RUN_HORIZONTAL、FALL-LANDED、INTERRUPTED 的双端相位；`inferred` 与 FALL source/trust 修复已由第三轮确认。
+- 集成服务端 `PARCOOL_SYNCED`、双端退出清理已验证。
+- 垂直墙跑、墙跳、CANCELLED、FALL 其他结束原因、死亡/维度清理、多人仍未验证；第三轮 FALL 双端计数差 3，待观察。
 - 整体仍不能标记 VERIFIED；不得进入阶段 03。
