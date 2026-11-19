@@ -18,10 +18,13 @@ public final class ParkourCombat {
     public static final String MOD_ID = "parkourcombat";
 
     public ParkourCombat() {
-        ParCoolActionAdapter adapter = FMLEnvironment.dist.isClient()
+        // The server adapter is always present, including inside an integrated
+        // server. The client adapter exists only on the physical client.
+        ParCoolActionAdapter serverAdapter = new ServerParCoolAdapter();
+        ParCoolActionAdapter clientAdapter = FMLEnvironment.dist.isClient()
                 ? new ParCoolActionAdapter(true)
-                : new ServerParCoolAdapter();
-        ParkourAdapterEvents.init(adapter);
+                : null;
+        ParkourAdapterEvents.init(serverAdapter, clientAdapter);
         MinecraftForge.EVENT_BUS.register(ParkourAdapterEvents.class);
     }
 }

@@ -24,7 +24,7 @@ public final class ClientParCoolAdapter {
 
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
-        ParCoolActionAdapter adapter = ParkourAdapterEvents.getAdapter();
+        ParCoolActionAdapter adapter = ParkourAdapterEvents.getClientAdapter();
         if (adapter != null) {
             adapter.clearAll("CLIENT_LOGOUT");
         }
@@ -32,7 +32,7 @@ public final class ClientParCoolAdapter {
 
     @SubscribeEvent
     public static void onClone(ClientPlayerNetworkEvent.Clone event) {
-        ParCoolActionAdapter adapter = ParkourAdapterEvents.getAdapter();
+        ParCoolActionAdapter adapter = ParkourAdapterEvents.getClientAdapter();
         if (adapter != null) {
             adapter.clearAll("CLIENT_CLONE");
         }
