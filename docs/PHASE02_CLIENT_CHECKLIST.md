@@ -113,27 +113,35 @@ FALL 进入/结束额外包含：
 - 截图：FALL、墙跑、Vault 各一张（可选）
 - 每个用例填“结果 + 实际日志片段 + 备注”
 
-### 2.6 首轮执行记录（2026-11-19 15:03–15:05）
+### 2.6 执行记录（两轮，2026-11-19）
 
-测试构建：`18ea034`（首轮为单侧 adapter；当前代码已增加集成服务端 adapter，需补测 `PARCOOL_SYNCED`）。
+#### 第一轮：单侧 adapter（15:03–15:05，构建 `18ea034`）
 
-| 类型 | 首轮次数 | 结果 |
-|---|---:|---|
-| FAST_RUN | 24 个 STARTED/ACTIVE/FINISHED 完整循环 | PASS（客户端） |
-| SLIDE | 1 个完整循环 | PASS（客户端） |
-| VAULT | 2 个完整循环 | PASS（客户端） |
-| WALL_RUN_HORIZONTAL | 2 个完整循环 | PASS（客户端） |
-| WALL_RUN_VERTICAL | 0 | NOT TESTED |
-| WALL_JUMP | 0 | NOT TESTED |
-| FALL | 21 次 FALLING / 21 次 FALL_END（全部 LANDED） | PASS（仅基础落地） |
-| CANCELLED / INTERRUPTED | 0 | NOT TESTED |
-| CLIENT_LOGOUT 清理 | 1 次，`players=1` | PASS |
-| 集成服务端 `PARCOOL_SYNCED` | 0 | NOT TESTED（需当前双 adapter 构建复测） |
-| 多人 | 0 | NOT TESTED |
+- FAST_RUN 24 个完整循环、SLIDE 1、VAULT 2、WALL_RUN_HORIZONTAL 2、FALL 21 次 LANDED；CLIENT_LOGOUT 清理成功。
+- 无 WALL_RUN_VERTICAL、WALL_JUMP、CANCELLED、INTERRUPTED。
+- 无集成服务端 `PARCOOL_SYNCED`（当时只有单侧 adapter）。
 
-- 首轮日志中未出现 `WALL_RUN_VERTICAL`、`WALL_JUMP`、`CANCELLED`、`INTERRUPTED`；不能判定这些功能通过或失败，只能标记未测试。
-- 首轮所有 FALL 均为 `endReason=LANDED`；水/岩浆/鞘翅/攀爬/载具/传送/维度/死亡未覆盖。
-- 日志证据：[runClient-phase02-adapter-transitions.log](logs/runClient-phase02-adapter-transitions.log)
+#### 第二轮：双 adapter（15:13–15:14，构建 `c1c206b`）
+
+| 类型 | 客户端 S/A/F/I | 服务端 S/A/F/I | 结果 |
+|---|---:|---:|---|
+| FAST_RUN | 23/23/21/2 | 23/23/21/2 | 双端 PASS |
+| SLIDE | 4/4/3/1 | 4/4/3/1 | 双端 PASS |
+| VAULT | 8/8/8/0 | 8/8/8/0 | 双端 PASS |
+| WALL_RUN_HORIZONTAL | 4/4/4/0 | 4/4/4/0 | 双端 PASS |
+| WALL_RUN_VERTICAL | 0 | 0 | NOT TESTED |
+| WALL_JUMP | 0 | 0 | NOT TESTED |
+| FALL | 36/36 LANDED | 37/37 LANDED | 双端基础落地 PASS |
+| CANCELLED | 0 | 0 | NOT TESTED |
+| INTERRUPTED | 3（2 FAST_RUN + 1 SLIDE） | 3（同左） | 相位 PASS；元数据修复后待复测 |
+
+- 集成服务端已出现 `source=PARCOOL_SYNCED`、`trust=LOW`、`serverAuthoritative=false`。
+- 退出清理双端成功：`CLIENT_LOGOUT` 与 `SERVER LOGOUT`。
+- 本轮发现并已修复：
+  - `inferred` 反向（客户端 true / 服务端 false）→ `aa96ec9` 改为 `!clientSide` 构造 tracker。
+  - 服务端 FALL 错误使用 `PARCOOL_SYNCED/LOW` → 改为 `VANILLA_DERIVED/HIGH`。
+- 修复后启动验证通过，但尚未重新跑动作；需确认客户端 INTERRUPTED `inferred=false`、服务端 `inferred=true`、服务端 FALL `VANILLA_DERIVED/HIGH`。
+- 证据：[runClient-phase02-adapter-transitions.log](logs/runClient-phase02-adapter-transitions.log)、[runClient-phase02-dual-actions.log](logs/runClient-phase02-dual-actions.log)
 
 ---
 
