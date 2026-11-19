@@ -152,9 +152,25 @@ $env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
 - 客户端成功打开窗口、初始化 OpenAL、加载资源包并进入主菜单。
 - `FATAL` / `Mixin apply failed` / `Exception` 搜索为空。
 - 已加载 `parkourcombat`、`parcool 3.4.3.3`、`bettercombat 1.9.0+1.20.1`、`playeranimator`、`cloth_config`。
-- 客户端在进入主菜单后被测试脚本强制结束；**未进入世界**。
+- 首次自动化测试只到主菜单；后续人工会话进入世界（见 6.1）。
 
 非致命警告：Forge 版本检查提示 `47.4.0` 相对 `47.4.28` 过期（按锁定规则不升级）；少量原版音效/Shader 警告。
+
+### 6.1 人工进世界基线（2026-11-19 14:32–14:34）
+
+用户在实际开发客户端中进入世界并执行 ParCool 动作，报告“游戏内各项动作均正常”。
+
+- 日志：[runClient-manual-20261119-1432.log](logs/runClient-manual-20261119-1432.log)（50,556 B）
+- 关键事实：
+  - `Setting user: Dev`、`Sound engine started`。
+  - 14:32:58 与 14:33:22 两次启动集成服务器；玩家分别于 14:33:02、14:33:24 登录世界。
+  - ParCool 客户端/服务端 limitation 同步成功；BC `WeaponRegistry` 编码/解码成功。
+  - 14:34:17 `Stopping!`，正常保存世界并退出。
+  - 无 `FATAL`、无崩溃。
+  - 仅 4 条 ERROR，全部是 Patchouli 缺失导致的 `parcool:grant_parcool_guide` 战利品表与 `parcool:parcool_guide` 配方（每次世界加载 2 条），与前置核查结论一致。
+- **该日志不是 ParCoolAdapter 验证**：日志中没有 `[ParkourAdapter]` 状态行（Adapter 尚未实现）。
+
+结论：**ParCool 原生动作在客户端可正常执行（用户人工观察）**；`ParkourCombatAdapter` 的动作识别、FALL、取消/中断与清理仍为 **NOT TESTED**。
 
 ---
 
@@ -167,8 +183,8 @@ $env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
 | `compileJava` | **PASS** | 21s |
 | `build` | **PASS** | 16s，生成 2,137 B JAR |
 | `runServer` | **PASS（启动级）** | `Done (16.652s)`，5 个模组加载 |
-| `runClient` | **PASS（主菜单级）** | 窗口/音频/资源加载成功，未进世界 |
-| 客户端跑酷玩法 | **NOT TESTED** | 本阶段未实现 Adapter；按决策 5 由用户人工验证 |
+| `runClient` | **PASS（主菜单级 + 人工进世界基线）** | 窗口/音频/资源加载成功；用户人工进世界并报告 ParCool 动作正常 |
+| 客户端跑酷玩法 | **ParCool 原生动作：PASS（用户人工报告）；ParkourCombatAdapter：NOT TESTED** | Adapter 尚未实现；无 `[ParkourAdapter]` 日志 |
 | ParCoolAdapter | **NOT IMPLEMENTED** | 按本阶段禁止项，未提前实现 |
 | 战斗/词条/网络/Mixin | **NOT IMPLEMENTED** | 未触碰 |
 | 整体功能 VERIFIED | **NO** | 仅骨架验收，不能标记为 VERIFIED |
@@ -195,7 +211,7 @@ $env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
 2. **ParCool 服务端状态是客户端同步镜像**（`CONFIRMED` 审计结论）：服务端 `Start` 包不重新执行 `canStart`；Adapter 必须带 `syncedFromClient` 标记，不能单独作为战斗权威。
 3. **服务端无法区分自然结束与客户端取消**：`FINISHED` 与 `CANCELLED` 的差异只存在于客户端；服务端 `INTERRUPTED` 只能启发式推断并标记。
 4. **`FALL` 为派生状态**：ParCool 无 `Fall` 动作类；需按决策 2 实现（尚未实现）。
-5. **客户端人工验证尚未执行**：按决策 5，需要用户按清单进入客户端执行跑酷动作并提供日志/截图。
+5. **客户端人工验证**：ParCool 原生动作已由用户人工进世界验证（报告正常）；但按决策 5 的 ParCoolAdapter 动作识别清单（TC-01～TC-19）仍未执行，因为 Adapter 尚未实现。
 
 ---
 
@@ -215,6 +231,6 @@ $env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
 ## 11. 结论
 
 - 最小 Forge 工程已建立，锁定依赖与哈希已记录，`compileJava` / `build` 通过。
-- `runServer` 到达 `Done`，`runClient` 到达主菜单；均为**启动级**验收。
-- 未实现任何跑酷适配、战斗逻辑或 Mixin，符合本阶段范围限制。
+- `runServer` 到达 `Done`；`runClient` 到达主菜单，并有用户人工进世界基线（ParCool 原生动作正常）。
+- 未实现任何跑酷适配、战斗逻辑或 Mixin，符合本阶段范围限制。ParCoolAdapter 尚未实现，因此其动作识别、FALL、取消/中断与清理均为 NOT TESTED。
 - 工程骨架已提交；补充核查见 `docs/PHASE02_PREFLIGHT.md`。等待用户审查确认后，再进入 ParCoolAdapter 实现阶段。
