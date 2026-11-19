@@ -1,0 +1,44 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "All Rights Reserved"
+issueTrackerURL = ""
+
+[[mods]]
+modId = "parkourcombat"
+version = "${file.jarVersion}"
+displayName = "ParkourCombat"
+authors = "MrGhost"
+description = '''
+ParkourCombat 2.0 scaffold. This stage contains no parkour adapter, no combat logic and no Mixin.
+Locked environment: Minecraft 1.20.1, Forge 47.4.0, ParCool 3.4.3.3, Better Combat Forge 1.9.0+1.20.1.
+'''
+
+[[dependencies.parkourcombat]]
+modId = "forge"
+mandatory = true
+versionRange = "[47.4.0,47.5)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.parkourcombat]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,1.21)"
+ordering = "NONE"
+side = "BOTH"
+
+# ParCool is required and permanently locked to 3.4.3.3.
+[[dependencies.parkourcombat]]
+modId = "parcool"
+mandatory = true
+versionRange = "[3.4.3.3]"
+ordering = "AFTER"
+side = "BOTH"
+
+# Better Combat is optional for the scaffold, but its version is locked when present.
+[[dependencies.parkourcombat]]
+modId = "bettercombat"
+mandatory = false
+versionRange = "[1.9.0+1.20.1]"
+ordering = "AFTER"
+side = "BOTH"

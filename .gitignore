@@ -1,0 +1,28 @@
+# Gradle
+.gradle/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+
+# Runtime
+/run/
+/logs/
+/crash-reports/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs are kept only under docs/logs
+*.log
+!docs/logs/*.log
