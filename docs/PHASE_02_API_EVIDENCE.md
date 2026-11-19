@@ -172,6 +172,7 @@ FALL 不是 ParCool 动作，没有 `Fall` 类。使用原版 `Player`/`Entity` 
 | 当前速度 | `Entity#getDeltaMovement()` | `m_20184_` → `getDeltaMovement` |
 | 是否在水中 | `Entity#isInWater()` | `m_20069_` → `isInWater` |
 | 是否在水中/气泡 | `Entity#isInWaterOrBubble()` | `m_20072_` → `isInWaterOrBubble` |
+| 是否在岩浆中 | `Entity#isInLava()` | `m_20077_` → `isInLava` |
 | 鞘翅飞行 | `LivingEntity#isFallFlying()` | `m_21255_` → `isFallFlying` |
 | 载具 | `Entity#getVehicle()` | `m_20202_` → `getVehicle` |
 | 攀爬 | `LivingEntity#onClimbable()` | `m_6147_` → `onClimbable` |
@@ -179,7 +180,7 @@ FALL 不是 ParCool 动作，没有 `Fall` 类。使用原版 `Player`/`Entity` 
 | 位置 | `Entity#position()` | `m_20182_` → `position` |
 
 - **CONFIRMED**：以上字段/方法在 1.20.1 official mappings 中存在；映射来自本工程 `build/createSrgToMcp/output.srg`。
-- **PARTIALLY_CONFIRMED**：`isInLava()` 未单独做 SRG 映射核验；实现时需补一次 `javap`/映射核对，或仅使用 `isInWaterOrBubble()` + `isInLava()` 的标准 official API 并在测试中覆盖。
+- **CONFIRMED**：`isInLava()` 映射为 `m_20077_`。
 - **CONFIRMED**：FALL 的进入/退出必须同时参考 `onGround`、`getDeltaMovement().y`、`fallDistance`，不能只看 `onGround`。
 - **UNCONFIRMED**：客户端与服务端 `fallDistance` 的逐 tick 同步一致性（服务端由移动包更新）需要运行时测试。
 
@@ -225,7 +226,7 @@ FALL 不是 ParCool 动作，没有 `Fall` 类。使用原版 `Player`/`Entity` 
 2. 服务端 `Start.Pre` 与 `isDoing()` 的精确 tick 时序（事件在 `action.start` 前，轮询在 tick 末；需要实测）。
 3. 服务端超时窗口 2 tick 的可靠性（启发式）。
 4. 客户端/服务端 `fallDistance` 的一致性。
-5. `isInLava()` 的 official 映射尚未单独核验（实现时补）。
+5. 服务端事件与轮询在同一 tick 内的精确先后（需实测日志验证）。
 
 ### UNCONFIRMED
 
