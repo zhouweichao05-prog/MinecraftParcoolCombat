@@ -2,7 +2,7 @@
 
 - 阶段：03
 - 状态：**PARTIALLY TESTED（仅空闲采样）**
-- 代码提交：`156b114`
+- 代码提交：`f3dc5f1`
 - 关联：[PHASE_03_TEST_REPORT.md](PHASE_03_TEST_REPORT.md)
 
 > 只验证运动数据快照，不验证攻击、伤害、词条、动画或网络。

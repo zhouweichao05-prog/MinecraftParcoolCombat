@@ -57,6 +57,7 @@ build/createSrgToMcp/output.srg
 | 攀爬 | `LivingEntity#onClimbable() : boolean` | `m_6147_` | public | 双端 |
 | 死亡/濒死 | `LivingEntity#isDeadOrDying() : boolean` | `m_21224_` | public | 双端 |
 | 游戏时间 | `Level#getGameTime() : long` | `m_46467_` | public | 双端 |
+| 玩家 tick | `Entity#tickCount : int` | `f_19797_` | public field | 双端 |
 | 客户端侧 | `Level#isClientSide : boolean` / `isClientSide()` | `f_46443_` | public | 双端 |
 | 维度 | `Level#dimension() : ResourceKey<Level>` | `m_46472_`（已在阶段 02 使用） | public | 双端 |
 | 本地玩家 | `Player#isLocalPlayer() : boolean` | 阶段 02 已使用 | public | 客户端 |
@@ -79,14 +80,16 @@ public double horizontalDistanceSqr();
   - 客户端玩家在 `[Render thread]`。
   - 服务端玩家在 `[Server thread]`。
 - `MotionTracker` 只应在 `PlayerTickEvent.END` 调用；不在网络包/渲染/异步线程读取。
-- 服务端实体位置/速度来自服务端移动包处理后的状态；客户端实体为本地预测/同步状态。
+- 服务端实体位置来自服务端移动包处理后的状态；客户端实体为本地预测/同步状态。
+- **实测限制**：`ServerPlayer#getDeltaMovement()` 在服务端移动包处理后可能为 `(0,0,0)`，即使位置已变化。服务端运动速度必须由服务端观测到的位置差 / `sampleTick` 推导；不能用服务端 raw `getDeltaMovement` 作为唯一速度来源。
+- **采样 tick**：客户端 `Level#getGameTime()` 在加载/同步时可能重复/回退；实际实现使用 `Player#tickCount` 作为采样 tick。
 - 不使用客户端 `MotionSnapshot` 作为服务端权威数据。
 
 ## 5. 数据可用性判断
 
 | 字段 | 能否可靠计算 | 说明 |
 |---|---|---|
-| 三维速度 | 是 | `getDeltaMovement()` |
+| 三维速度 | 是（服务端需位置推导） | 客户端 `getDeltaMovement()`；服务端 `ServerPlayer#getDeltaMovement` 可能为 0，使用位置差/tick |
 | 水平速度 | 是 | `sqrt(vx²+vz²)` |
 | 水平方向 | 是（带阈值/保持） | 速度过低时方向无定义 |
 | 水平加速度 | 是 | 相邻有效采样速度差；传送/丢 tick 时重置 |
@@ -97,11 +100,11 @@ public double horizontalDistanceSqr();
 | 是否 FALLING | 是 | 阶段 02 `FallSnapshot.active()` |
 | 当前动作 | 是 | 阶段 02 `ParkourActionTracker` 的活动状态 |
 | source/trust | 是 | 由逻辑端和阶段 02 决定 |
-| 采样 tick | 是 | `Level#getGameTime()` |
+| 采样 tick | 是 | `Player#tickCount`（客户端 level gameTime 可能重复/回退） |
 
 ## 6. 未确认/运行时验证项
 
-1. 服务端 `getDeltaMovement()` 在 `PlayerTickEvent.END` 的逐 tick 精度。
+1. 服务端 `getDeltaMovement()` 在 `PlayerTickEvent.END` 的逐 tick 精度：实测可能为 0，已改为位置差推导。
 2. 客户端与服务端位置/速度在快速移动/传送时的逐 tick 差异。
 3. `fallDistance` 在服务端的更新时序（阶段 02 已有 20 vs 23 的 FALL 计数差异观察）。
 4. 实体重建/跨维度后第一 tick 的 `getDeltaMovement()` 是否包含旧速度；因此首帧强制零加速度。

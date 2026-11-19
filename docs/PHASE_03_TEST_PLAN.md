@@ -1,7 +1,7 @@
 # PHASE_03_TEST_PLAN — 运动数据系统验证计划
 
 - 阶段：03
-- 文档状态：**PARTIALLY TESTED（单元 48/48；运行时仅空闲采样）**
+- 文档状态：**PARTIALLY TESTED（单元 50/50；运行时仅空闲采样）**
 - 目标：验证 `MotionSnapshot` 的数值正确性、采样边界、生命周期、性能和双端可信度。
 - 前置：阶段 02 `CONDITIONALLY_ACCEPTED`；不重新测试/修改阶段 02 已通过语义。
 
@@ -112,7 +112,7 @@
 | 功能 | DESIGNED | IMPLEMENTED | COMPILED | TESTED | SERVER-TESTED | VERIFIED |
 |---|---|---|---|---|---|---|
 | MotionSnapshot | ✓ | ✓ | ✓ | ✓（单元） | — | — |
-| MotionAccumulator | ✓ | ✓ | ✓ | ✓（18 单元） | — | — |
+| MotionAccumulator | ✓ | ✓ | ✓ | ✓（20 单元） | — | — |
 | MotionHistory | ✓ | ✓ | ✓ | ✓（3 单元） | — | — |
 | MotionTracker 接入 | ✓ | ✓ | ✓ | ✓（空闲采样） | ✓（启动级） | — |
 | 客户端采样 | ✓ | ✓ | ✓ | ✓（空闲） | — | — |

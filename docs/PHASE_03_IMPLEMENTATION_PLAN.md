@@ -58,7 +58,7 @@ MotionFrame
 
 ```text
 MotionSnapshot
-- long sampleTick                 // 采样时的 level.getGameTime()
+- long sampleTick                 // 采样时的 Player#tickCount（客户端 level gameTime 可能重复/回退）
 - ParkourPosition position        // 当前绝对位置
 - double velocityX, velocityY, velocityZ
 - double horizontalSpeed          // sqrt(vx^2 + vz^2)

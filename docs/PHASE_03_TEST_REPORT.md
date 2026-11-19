@@ -1,7 +1,7 @@
 # PHASE_03_TEST_REPORT — 运动数据系统测试记录
 
 - 阶段：03
-- 代码提交：`156b114`
+- 代码提交：`f3dc5f1`（初始 `156b114` + 修复）
 - 测试日期：2026-11-19
 - 状态：**部分 TESTED；未 VERIFIED**
 - 关联文档：
@@ -15,7 +15,7 @@
 |---|---|
 | 代码实现 | **IMPLEMENTED** |
 | 编译 | **COMPILED** |
-| 单元测试 | **TESTED（48/48 PASS）** |
+| 单元测试 | **TESTED（50/50 PASS）** |
 | 客户端实际空闲采样 | **TESTED（有限）** |
 | 集成服务端实际空闲采样 | **TESTED（有限）** |
 | 专用服务器启动 | **SERVER-TESTED（启动级）** |
@@ -32,11 +32,11 @@
 
 | 测试类 | 数量 | 失败 |
 |---|---:|---:|
-| `MotionAccumulatorTest` | 18 | 0 |
+| `MotionAccumulatorTest` | 20 | 0 |
 | `MotionHistoryTest` | 3 | 0 |
 | `ParkourActionSelectionTest` | 6 | 0 |
 | 阶段 02 既有测试 | 21 | 0 |
-| **合计** | **48** | **0** |
+| **合计** | **50** | **0** |
 
 覆盖：
 
@@ -52,6 +52,8 @@
 - 动作优先级（WALL_RUN > WALL_JUMP > VAULT > SLIDE > FAST_RUN）。
 - 空动作、终态不选择。
 - 运动/ FALL / ParCool 动作的 source/trust 隔离。
+- 服务端位置差推导速度（`ServerPlayer#getDeltaMovement` 为 0 的场景）。
+- 服务端空闲不把原始重力误当运动。
 - 阶段 02 的 21 个测试仍通过。
 
 日志：[test-phase03.log](logs/test-phase03.log)
@@ -59,8 +61,8 @@
 ## 3. 编译与构建
 
 - `compileJava`：PASS
-- `build`：PASS（12s）
-- 产物：`build/libs/parkourcombat-2.0.0-alpha.1.jar`（51,776 B）
+- `build`：PASS（13s）
+- 产物：`build/libs/parkourcombat-2.0.0-alpha.1.jar`（52,070 B）
 - 未修改 `build.gradle` 依赖；JUnit 仍是测试专用。
 
 日志：[compileJava-phase03.log](logs/compileJava-phase03.log)、[build-phase03.log](logs/build-phase03.log)
@@ -69,7 +71,7 @@
 
 使用开发客户端 `runClient` + 测试世界 `Phase03Test`（复制自现有测试世界，避免修改原世界），进入世界后空闲采样。
 
-- `[MotionTracker]` 共 24 条：客户端 12、集成服务端 12。
+- `[MotionTracker]` 共 18 条：客户端 9、集成服务端 9。
 - 客户端：
   ```text
   side=CLIENT motionSource=CLIENT_LOCAL motionTrust=MEDIUM
@@ -81,20 +83,30 @@
   fallSource=VANILLA_DERIVED fallTrust=HIGH
   ```
 - 空闲值：`hSpeed=0.0`、`dir=(0,0)`、`hAccel=0.0`、`vAccel=0.0`、`movingTicks=0`、`onGround=true`、`actionType=NONE`。
-- 无 FATAL；仅有 Patchouli 指南书缺失 ERROR。
-- 日志：[runClient-phase03.debug.log](logs/runClient-phase03.debug.log)
+- **无 reset**；无 FATAL；仅有 Patchouli 指南书缺失 ERROR。
+- 日志：[runClient-phase03-final.debug.log](logs/runClient-phase03-final.debug.log)
 
-> 该证据只证明采样管线、双端 source/trust 和空闲数值；不证明移动/跳跃/下落等动态数值。
+> 该证据只证明修复后空闲采样管线、双端 source/trust 和“无 reset”；不证明移动/跳跃/下落等动态数值。
+
+### 4.1 修复前动态日志
+
+用户提供的 16:02 日志（[runClient-phase03-prefix-movement.log](logs/runClient-phase03-prefix-movement.log)）：
+
+- `[MotionTracker]` 98 条客户端 + 98 条服务端。
+- 客户端 `hSpeed` 非零、方向变化、`movingTicks` 增长；说明客户端动态采样有效。
+- **服务端位置在变化，但 `vel=(0,0,0)`、`hSpeed=0`**；`ServerPlayer#getDeltaMovement` 不可作为唯一速度来源。
+- 死亡后 `DEAD` reset 在服务端 39 次、客户端 20 次，每 tick 重复。
+- 这些是真实缺陷，已在 `f3dc5f1` 修复；修复后动态复测尚未完成。
 
 ## 5. 专用服务器
 
 命令：`gradlew runServer`
 
-- `Done (7.833s)!`
+- `Done (7.812s)!`
 - `[ParkourAdapter] initialized side=SERVER parCoolVersion=3.4.3.3`
 - 无 ClassNotFound/NoSuchMethod/FATAL。
 - 无玩家连接，因此没有专用服务器玩家采样。
-- 日志：[runServer-phase03.latest.log](logs/runServer-phase03.latest.log)
+- 日志：[runServer-phase03-final.latest.log](logs/runServer-phase03-final.latest.log)
 
 ## 6. 阶段 03 要求的 15 项覆盖
 

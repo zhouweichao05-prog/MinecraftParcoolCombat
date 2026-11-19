@@ -1,7 +1,7 @@
 # PHASE_03_IMPLEMENTATION_REPORT — MotionTracker 与玩家运动数据系统
 
 - 阶段：03
-- 实现提交：`156b114`（`feat: implement phase 03 motion snapshot system`）
+- 实现提交：`f3dc5f1`（初始 `156b114` + 服务端运动/死亡清理修复）
 - 规划提交：`3d0ddaf`
 - 前置状态：阶段 02 `CONDITIONALLY_ACCEPTED`（HEAD `3389c13`，记录提交 `73ed388`）
 - 状态：**IMPLEMENTED / COMPILED / 部分 TESTED；未 VERIFIED**
@@ -124,19 +124,21 @@ WALL_RUN > WALL_JUMP > VAULT > SLIDE > FAST_RUN
 
 ## 5. 实际测试结果
 
-- 单元测试：**48/48 PASS**（阶段 02 的 21 + 新增 27）。
+- 单元测试：**50/50 PASS**（阶段 02 的 21 + 新增 29）。
 - `compileJava`：PASS。
-- `build`：PASS（12s；jar 51,776 B）。
-- 开发客户端（quick-play 测试世界）：成功进入世界；客户端/集成服务端各产生 24 条空闲运动采样，无 FATAL。
-- 专用服务器：`Done (7.833s)`，`side=SERVER` 初始化成功。
-- 实际采样证据：[runClient-phase03.debug.log](logs/runClient-phase03.debug.log)、[runServer-phase03.latest.log](logs/runServer-phase03.latest.log)
+- `build`：PASS（13s；jar 52,070 B）。
+- 开发客户端（quick-play 测试世界）：成功进入世界；最终空闲采样 18 条（客户端 9、集成服务端 9），无 reset、无 FATAL。
+- 专用服务器：`Done (7.812s)`，`side=SERVER` 初始化成功。
+- 修复前实测日志（用户提供，16:02）：98 条客户端 + 98 条服务端；客户端有运动值，服务端 `getDeltaMovement` 为 0，且死亡后 DEAD reset 每 tick 重复。该日志用于定位缺陷，不作为修复后通过证据。
+- 最终采样证据：[runClient-phase03-final.debug.log](logs/runClient-phase03-final.debug.log)、[runServer-phase03-final.latest.log](logs/runServer-phase03-final.latest.log)
+- 修复前证据：[runClient-phase03-prefix-movement.log](logs/runClient-phase03-prefix-movement.log)
 
 ## 6. 实际采样示例
 
 客户端空闲：
 
 ```text
-[MotionTracker] side=CLIENT player=Dev tick=1337
+[MotionTracker] side=CLIENT player=Dev tick=1
 pos=(-16.93,71.0,54.31) vel=(0.0,-0.0784,0.0)
 hSpeed=0.0 dir=(0.0,0.0) hAccel=0.0 vAccel=0.0
 movingTicks=0 onGround=true
@@ -148,14 +150,21 @@ actionType=NONE
 服务端空闲：
 
 ```text
-[MotionTracker] side=SERVER player=Dev tick=1338
-pos=(-16.93,71.0,54.31) vel=(0.0,-0.0784,0.0)
-hSpeed=0.0 ...
+[MotionTracker] side=SERVER player=Dev tick=1
+pos=(-16.93,71.0,54.31) vel=(0.0,0.0,0.0)
+hSpeed=0.0 vAccel=0.0
 motionSource=SERVER_NATIVE motionTrust=HIGH
 fallPhase=NOT_FALLING fallSource=VANILLA_DERIVED fallTrust=HIGH
 ```
 
-## 7. 未测试/未验证
+## 7. 实测发现并修复
+
+1. **服务端运动速度恒为 0**：16:02 日志中服务端位置在变化，但 `vel=(0,0,0)`、`hSpeed=0`。原因是 `ServerPlayer#getDeltaMovement` 在服务端移动包处理后可能为 0。修复：`MotionAccumulator` 对 `SERVER_NATIVE` 使用服务端观测到的位置差 / `sampleTick` 推导速度；加速度基线保存“有效速度”，避免首帧/重力造成虚假 vAccel。
+2. **死亡后 DEAD reset 每 tick 重复**：死亡界面仍触发 `PlayerTickEvent`，adapter 每 tick 重新创建 tracker 并 reset。修复：`onPlayerTick` 检测 `isDeadOrDying` 后移除并跳过。
+3. **客户端 level gameTime 导致 TICK_INVALID**：客户端 `Level#getGameTime` 在加载/同步时出现重复/回退，导致历史被清。修复：采样 tick 改用 `Player#tickCount`；修复后空闲采样无 reset。
+4. **服务端空闲虚假 vAccel=0.0784**：位置未变但首帧 `deltaMovement.y` 为负；修复后服务端首帧有效速度为 0，空闲 vAccel=0。
+
+## 8. 未测试/未验证
 
 - 真实移动/冲刺/转向的数值。
 - 真实跳跃/下落/落地时的 `vy`、FALL 和连续运动。
@@ -165,25 +174,26 @@ fallPhase=NOT_FALLING fallSource=VANILLA_DERIVED fallTrust=HIGH
 - 多人。
 - FALL 水/岩浆/鞘翅/攀爬/载具等阶段 02 遗留项仍 NOT TESTED。
 
-## 8. 已知实现注记
+## 9. 已知实现注记
 
-1. 客户端世界加载时观察到 `TICK_INVALID`/`TICK_GAP` 重置；重置后正常采样。重置会清历史，属于采样异常保护。
+1. 客户端 `Level#getGameTime` 在加载/同步时可能重复/回退；当前采样 tick 已改为 `Player#tickCount`，修复后空闲采样无 reset。
 2. `ParkourActionSelection` 为取得阶段 02 的当前状态，每 tick 调用一次 `ParkourActionTracker.getState`，产生一个 `Optional`。由于用户明确禁止修改 `ParkourActionTracker`，该 Optional 是阶段 02 API 边界；`MotionSnapshot`/`MotionHistory`/`MotionAccumulator` 热路径本身不使用 Optional/List/Stream。
 3. 未添加调试命令；仅 DEBUG 采样日志每 20 tick 最多一次。
+4. 服务端运动速度是“服务端接受的位置差 / tick”，不是客户端 `getDeltaMovement`；仍属于服务端观测数据，source/trust 保持 `SERVER_NATIVE/HIGH`。
 
-## 9. 状态
+## 10. 状态
 
 | 项 | 状态 |
 |---|---|
 | 设计 | **DESIGNED** |
 | 代码 | **IMPLEMENTED** |
 | 编译 | **COMPILED** |
-| 单元测试 | **TESTED（48/48）** |
+| 单元测试 | **TESTED（50/50）** |
 | 客户端实际空闲采样 | **TESTED（有限）** |
 | 服务端启动 | **SERVER-TESTED（启动级）** |
 | 真实移动/传送/维度/死亡 | **NOT TESTED** |
 | 整体 | **未 VERIFIED** |
 
-## 10. 结论
+## 11. 结论
 
-阶段 03 代码已实现、编译、48 个单元测试通过，客户端和集成服务端都有实际空闲采样；真实运动数值与生命周期仍需人工验证。未进入阶段 04。
+阶段 03 代码已实现、编译、50 个单元测试通过；修复后客户端/集成服务端空闲采样无 reset，服务端空闲 vAccel=0。真实运动数值（尤其服务端位置推导速度）与生命周期仍需人工复测。未进入阶段 04。
