@@ -28,7 +28,7 @@
 4. 状态来源与可信度标记正确：
    - `CLIENT_LOCAL`（客户端本地）
    - `PARCOOL_SYNCED`（服务端收到的 ParCool 同步）
-   - `ADAPTER_DERIVED`（适配层派生，如 FALL）
+   - `VANILLA_DERIVED`（原版物理派生，如 FALL；旧草案中的 `ADAPTER_DERIVED` 同义）
    - `SERVER_NATIVE`（服务端原生，预留）
 5. 玩家死亡、切换维度、退出游戏后无残留状态。
 6. 客户端不使用动画推断服务端动作状态。
@@ -95,7 +95,7 @@ FALL 进入/结束额外包含：
 要求：
 
 - `PHASE` 取值：`STARTED` / `ACTIVE` / `FINISHED` / `CANCELLED` / `INTERRUPTED` / `UNKNOWN`。
-- `SOURCE` 取值：`SERVER_NATIVE` / `PARCOOL_SYNCED` / `CLIENT_LOCAL` / `ADAPTER_DERIVED`。
+- `SOURCE` 取值：`SERVER_NATIVE` / `PARCOOL_SYNCED` / `CLIENT_LOCAL` / `VANILLA_DERIVED`。
 - `TRUST` 取值：`HIGH` / `MEDIUM` / `LOW` / `UNKNOWN`。
 - 服务端推断的中断必须带 `inferred=true` 与判定依据。
 - 客户端日志在 `[Render thread]`，集成服务端日志在 `[Server thread]`；同一 `run/logs/latest.log` 中可区分。
@@ -182,7 +182,7 @@ FALL 进入/结束额外包含：
 |---|---|
 | 前置 | 6 格高平台；生存；无液体 |
 | 步骤 | 1. 从平台边缘向前跳；2. 观察上升阶段；3. 下降并落地 |
-| 预期 | **上升阶段不得出现 FALL**；下降后（`deltaMovement.y < 0` 且 `fallDistance > 0.5`）出现 `FALL STARTED`；`fall.start` 接近起跳/顶点位置；`fall.distance` 持续增加；`fall.vy` 为负；落地后 `FINISHED`，`endReason=LANDED`，`onGround=true`；客户端 `source=ADAPTER_DERIVED`；集成服务端 `serverAuthoritative=true` |
+| 预期 | **上升阶段不得出现 FALL**；下降后（`deltaMovement.y < 0` 且 `fallDistance > 0.5`）出现 `FALL STARTED`；`fall.start` 接近起跳/顶点位置；`fall.distance` 持续增加；`fall.vy` 为负；落地后 `FINISHED`，`endReason=LANDED`，`onGround=true`；客户端 `source=VANILLA_DERIVED`；集成服务端 `serverAuthoritative=true` |
 | 判定 | 上升阶段若出现 FALL 即 FAIL；落地后无残留 active |
 | 结果 |  |
 
@@ -259,7 +259,7 @@ FALL 进入/结束额外包含：
 | 项 | 内容 |
 |---|---|
 | 步骤 | 在单人游戏中执行 TC-01 与 TC-07 |
-| 预期 | 客户端动作：`source=CLIENT_LOCAL`；集成服务端 ParCool 动作：`source=PARCOOL_SYNCED`、`trust=LOW`、`serverAuthoritative=false`；服务端 FALL：`source=ADAPTER_DERIVED`、`trust=HIGH`、`serverAuthoritative=true` |
+| 预期 | 客户端动作：`source=CLIENT_LOCAL`；集成服务端 ParCool 动作：`source=PARCOOL_SYNCED`、`trust=LOW`、`serverAuthoritative=false`；服务端 FALL：`source=VANILLA_DERIVED`、`trust=HIGH`、`serverAuthoritative=true` |
 | 判定 | 任何把服务端 ParCool 同步状态标成 HIGH/authoritative 的行为均 FAIL |
 | 结果 |  |
 
