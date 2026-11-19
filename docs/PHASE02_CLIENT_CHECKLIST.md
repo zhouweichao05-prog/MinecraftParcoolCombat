@@ -1,15 +1,15 @@
 # PHASE02_CLIENT_CHECKLIST — ParCoolAdapter 客户端人工验证清单
 
-- 文档状态：**DRAFT（待阶段 02 实现后执行）**
+- 文档状态：**IN PROGRESS（首轮已执行，部分通过）**
 - 适用阶段：阶段 02 ParCoolAdapter
-- 适用版本：ParkourCombat 2.0（scaffold + 待实现的 adapter）
+- 适用版本：ParkourCombat 2.0（阶段 02 实现）
 - 关联文档：
   - [PARCOOL_API_AUDIT.md](PARCOOL_API_AUDIT.md)
   - [PHASE02_PREFLIGHT.md](PHASE02_PREFLIGHT.md)
   - [SCAFFOLD_ACCEPTANCE.md](SCAFFOLD_ACCEPTANCE.md)
 
 > 本清单只验证 **客户端适配层状态识别**，不验证 Better Combat 攻击桥接、伤害、词条、动画或任何战斗玩法。
-> 阶段 02 代码尚未实现；本文件先确定“怎么测、看什么、如何判定”，实现完成后可直接执行。
+> 阶段 02 已实现；首轮结果见 2.6，未覆盖项仍为 `NOT TESTED`。
 
 ---
 
@@ -75,21 +75,22 @@ mods 列表（ParCool / BC / 其他）：
 - 准备：6 格高平台、一面 4×4 墙、一格高栅栏、水池、梯子/藤蔓、船或马、鞘翅。
 - 除 ParCool 外，不安时装改动跑酷动作的模组；BC 只在“第二遍共存检查”中启用。
 
-### 2.4 日志与可观测性约定（阶段 02 实现必须满足）
+### 2.4 日志与可观测性约定（阶段 02 实现）
 
-客户端适配层必须在**相位变化时**输出 INFO 日志（不是每 tick 刷屏），格式至少包含：
+客户端适配层必须在**相位变化时**输出 DEBUG 日志（不是每 tick 刷屏），格式至少包含：
 
 ```text
 [ParkourAdapter] side=CLIENT player=<name> type=<TYPE> phase=<PHASE>
-  source=<SOURCE> trust=<TRUST> ticks=<n> evidence=<text>
+  source=<SOURCE> trust=<TRUST> ticks=<n> serverAuthoritative=<bool>
+  inferred=<bool> evidence=<text>
 ```
 
 FALL 进入/结束额外包含：
 
 ```text
-[ParkourAdapter] side=... type=FALL phase=FINISHED
-  fall.start=<x,y,z> fall.distance=<double> fall.vy=<double>
-  fall.duration=<ticks> fall.onGround=<bool> fall.endReason=<REASON>
+[ParkourAdapter] side=... player=... type=FALL phase=<PHASE>
+  source=... trust=... serverAuthoritative=<bool> ticks=<n>
+  fallStart=<x,y,z> fallDistance=<double> fallVy=<double> endReason=<REASON>
 ```
 
 要求：
@@ -98,16 +99,41 @@ FALL 进入/结束额外包含：
 - `SOURCE` 取值：`SERVER_NATIVE` / `PARCOOL_SYNCED` / `CLIENT_LOCAL` / `VANILLA_DERIVED`。
 - `TRUST` 取值：`HIGH` / `MEDIUM` / `LOW` / `UNKNOWN`。
 - 服务端推断的中断必须带 `inferred=true` 与判定依据。
-- 客户端日志在 `[Render thread]`，集成服务端日志在 `[Server thread]`；同一 `run/logs/latest.log` 中可区分。
+- 客户端动作在 `[Render thread]`，集成服务端动作在 `[Server thread]`。
+- 普通动作生命周期是 **DEBUG**；初始化/重要清理是 **INFO**；异常是 **WARN/ERROR**。
+- `run/logs/latest.log` 只保留 INFO，**看不到动作生命周期**；请查看 `run/logs/debug.log`，或开发控制台（`forge.logging.console.level=debug`）。
 
-> 若阶段 02 实现改用调试命令而非日志，必须在 `PHASE02_TEST_REPORT.md` 中给出等价命令与输出格式；本清单执行时以实际实现为准。
+> 本阶段没有调试命令；以日志为准。
 > 如果日志缺少上述字段，相关用例标记为 `BLOCKED`，不能凭感觉判定 PASS。
 
 ### 2.5 记录文件
 
-- 日志：`run/logs/latest.log`
+- 动作日志：`run/logs/debug.log`（过滤 `[ParkourAdapter]`）
+- 启动/清理日志：`run/logs/latest.log`
 - 截图：FALL、墙跑、Vault 各一张（可选）
 - 每个用例填“结果 + 实际日志片段 + 备注”
+
+### 2.6 首轮执行记录（2026-11-19 15:03–15:05）
+
+测试构建：`18ea034`（首轮为单侧 adapter；当前代码已增加集成服务端 adapter，需补测 `PARCOOL_SYNCED`）。
+
+| 类型 | 首轮次数 | 结果 |
+|---|---:|---|
+| FAST_RUN | 24 个 STARTED/ACTIVE/FINISHED 完整循环 | PASS（客户端） |
+| SLIDE | 1 个完整循环 | PASS（客户端） |
+| VAULT | 2 个完整循环 | PASS（客户端） |
+| WALL_RUN_HORIZONTAL | 2 个完整循环 | PASS（客户端） |
+| WALL_RUN_VERTICAL | 0 | NOT TESTED |
+| WALL_JUMP | 0 | NOT TESTED |
+| FALL | 21 次 FALLING / 21 次 FALL_END（全部 LANDED） | PASS（仅基础落地） |
+| CANCELLED / INTERRUPTED | 0 | NOT TESTED |
+| CLIENT_LOGOUT 清理 | 1 次，`players=1` | PASS |
+| 集成服务端 `PARCOOL_SYNCED` | 0 | NOT TESTED（需当前双 adapter 构建复测） |
+| 多人 | 0 | NOT TESTED |
+
+- 首轮日志中未出现 `WALL_RUN_VERTICAL`、`WALL_JUMP`、`CANCELLED`、`INTERRUPTED`；不能判定这些功能通过或失败，只能标记未测试。
+- 首轮所有 FALL 均为 `endReason=LANDED`；水/岩浆/鞘翅/攀爬/载具/传送/维度/死亡未覆盖。
+- 日志证据：[runClient-phase02-adapter-transitions.log](logs/runClient-phase02-adapter-transitions.log)
 
 ---
 
