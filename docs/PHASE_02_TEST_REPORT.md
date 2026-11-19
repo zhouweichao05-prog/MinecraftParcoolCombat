@@ -1,6 +1,7 @@
 # PHASE_02_TEST_REPORT — ParCoolAdapter 实现与测试记录
 
 - 阶段：02
+- 阶段状态：**CONDITIONALLY_ACCEPTED**（2026-11-19，HEAD `3389c13`；见 [PHASE_02_ACCEPTANCE.md](PHASE_02_ACCEPTANCE.md)）
 - 日期：2026-11-19
 - 代码提交：`aa96ec9`（首轮 `18ea034` + 集成服务端 `c1c206b` + 元数据修复 `aa96ec9`）
 - 环境：Minecraft 1.20.1 / Forge 47.4.0 / Java 17 / Gradle 8.8 / ParCool 3.4.3.3 / Better Combat 1.9.0+1.20.1 / Player Animator 1.0.2-rc1 / Cloth Config 11.1.136
@@ -20,7 +21,8 @@
 | 专用服务器加载/初始化 | **SERVER-TESTED（仅启动级）** |
 | 客户端启动/加载 | **PASS（启动级）** |
 | 真实跑酷动作识别 | **TESTED**（FAST_RUN/SLIDE/VAULT/WALL_RUN_HORIZONTAL，双端；垂直墙跑/墙跳未测） |
-| FALL 实机识别 | **TESTED**（LANDED，双端；其他结束原因未测） || INTERRUPTED 实机 | **TESTED**（相位 + `inferred` 双端已验证，第三轮） |
+| FALL 实机识别 | **TESTED**（LANDED，双端；其他结束原因未测） |
+| INTERRUPTED 实机 | **TESTED**（相位 + `inferred` 双端已验证，第三轮） |
 | CANCELLED 实机 | **NOT TESTED** |
 | 退出清理实机 | **TESTED**（CLIENT_LOGOUT + SERVER LOGOUT） |
 | 死亡/维度清理实机 | **NOT TESTED** |

@@ -1,6 +1,6 @@
 # PHASE02_CLIENT_CHECKLIST — ParCoolAdapter 客户端人工验证清单
 
-- 文档状态：**IN PROGRESS（核心路径通过，边界未测）**
+- 文档状态：**CONDITIONALLY_ACCEPTED（核心路径通过，边界未测）**
 - 适用阶段：阶段 02 ParCoolAdapter
 - 适用版本：ParkourCombat 2.0（阶段 02 实现）
 - 关联文档：
