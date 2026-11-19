@@ -60,6 +60,13 @@ public final class MotionHistory {
         return size;
     }
 
+    /**
+     * Actual capacity of this instance. Read-only; does not affect eviction.
+     */
+    public int capacity() {
+        return samples.length;
+    }
+
     public void clear() {
         Arrays.fill(samples, null);
         size = 0;

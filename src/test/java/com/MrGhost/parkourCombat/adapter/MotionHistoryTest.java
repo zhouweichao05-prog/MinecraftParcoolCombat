@@ -8,6 +8,12 @@ import org.junit.jupiter.api.Test;
 
 class MotionHistoryTest {
     @Test
+    void capacityReturnsActualInstanceCapacity() {
+        assertEquals(20, new MotionHistory().capacity());
+        assertEquals(5, new MotionHistory(5).capacity());
+    }
+
+    @Test
     void keepsOnlyNewestTwentySamples() {
         MotionHistory history = new MotionHistory();
         for (int tick = 0; tick < 25; tick++) {

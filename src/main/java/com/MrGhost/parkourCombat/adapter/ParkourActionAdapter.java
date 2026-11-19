@@ -19,4 +19,6 @@ public interface ParkourActionAdapter {
     Optional<MotionSnapshot> getMotionSnapshot(Player player);
 
     List<MotionSnapshot> getMotionHistory(Player player, int maxSamples);
+
+    int getMotionHistoryCapacity(Player player);
 }

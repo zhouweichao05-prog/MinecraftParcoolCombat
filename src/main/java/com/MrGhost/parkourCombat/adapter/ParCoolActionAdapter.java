@@ -239,6 +239,12 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
     }
 
     @Override
+    public int getMotionHistoryCapacity(Player player) {
+        PlayerTrackers trackers = players.get(player.getUUID());
+        return trackers == null ? 0 : trackers.motion.historyCapacity();
+    }
+
+    @Override
     public Optional<WallRunSnapshot> getWallRunState(Player player, ParkourActionType type) {
         if (!type.isConcreteWallRun()) {
             return Optional.empty();

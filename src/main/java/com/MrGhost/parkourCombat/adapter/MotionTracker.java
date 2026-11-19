@@ -95,6 +95,10 @@ public final class MotionTracker {
         return accumulator.recent(maxSamples);
     }
 
+    public int historyCapacity() {
+        return accumulator.history().capacity();
+    }
+
     public String consumeResetReason() {
         return accumulator.consumeResetReason();
     }
