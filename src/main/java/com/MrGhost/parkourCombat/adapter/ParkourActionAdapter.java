@@ -1,5 +1,6 @@
 package com.MrGhost.parkourCombat.adapter;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.world.entity.player.Player;
@@ -14,4 +15,8 @@ public interface ParkourActionAdapter {
     Optional<FallSnapshot> getFallState(Player player);
 
     Optional<WallRunSnapshot> getWallRunState(Player player, ParkourActionType type);
+
+    Optional<MotionSnapshot> getMotionSnapshot(Player player);
+
+    List<MotionSnapshot> getMotionHistory(Player player, int maxSamples);
 }

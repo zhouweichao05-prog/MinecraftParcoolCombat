@@ -5,6 +5,7 @@ import com.alrex.parcool.common.action.Action;
 import com.alrex.parcool.common.capability.Parkourability;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -115,12 +116,28 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
                 ? Set.of()
                 : mapping.activeTypes(parkourability);
         trackers.actions.onTick(gameTime, doing);
-        trackers.motion.tick(player, gameTime);
 
-        FallSnapshot fall = trackers.motion.snapshot(fallSource(), fallTrust());
+        ParkourActionState primary = ParkourActionSelection.select(trackers.actions);
+        trackers.motion.tick(player, gameTime, primary);
+
+        FallSnapshot fall = trackers.motion.getFallSnapshot();
         if (fall.phase() != trackers.lastFallPhase) {
             logFall(trackers.name, fall);
             trackers.lastFallPhase = fall.phase();
+        }
+
+        String resetReason = trackers.motion.consumeResetReason();
+        if (resetReason != null) {
+            LOGGER.info("[MotionTracker] reset side={} player={} tick={} reason={}",
+                    sideName(), trackers.name, gameTime, resetReason);
+        }
+
+        MotionSnapshot motion = trackers.motion.getLatestSnapshot();
+        if (motion != null
+                && (trackers.lastMotionLogTick < 0L
+                || gameTime - trackers.lastMotionLogTick >= 20L)) {
+            logMotion(trackers.name, motion);
+            trackers.lastMotionLogTick = gameTime;
         }
     }
 
@@ -193,10 +210,26 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         if (trackers == null) {
             return Optional.empty();
         }
-        FallSnapshot snapshot = trackers.motion.snapshot(fallSource(), fallTrust());
+        FallSnapshot snapshot = trackers.motion.getFallSnapshot();
         return snapshot.phase() == FallPhase.NOT_FALLING
                 ? Optional.empty()
                 : Optional.of(snapshot);
+    }
+
+    @Override
+    public Optional<MotionSnapshot> getMotionSnapshot(Player player) {
+        PlayerTrackers trackers = players.get(player.getUUID());
+        return trackers == null
+                ? Optional.empty()
+                : Optional.ofNullable(trackers.motion.getLatestSnapshot());
+    }
+
+    @Override
+    public List<MotionSnapshot> getMotionHistory(Player player, int maxSamples) {
+        PlayerTrackers trackers = players.get(player.getUUID());
+        return trackers == null
+                ? List.of()
+                : trackers.motion.getHistory(maxSamples);
     }
 
     @Override
@@ -229,6 +262,19 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         return clientSide ? ParkourTrust.MEDIUM : ParkourTrust.HIGH;
     }
 
+    /**
+     * Kinematic source only; nested fall/action states keep their own trust.
+     */
+    protected ParkourStateSource motionSource() {
+        return clientSide
+                ? ParkourStateSource.CLIENT_LOCAL
+                : ParkourStateSource.SERVER_NATIVE;
+    }
+
+    protected ParkourTrust motionTrust() {
+        return clientSide ? ParkourTrust.MEDIUM : ParkourTrust.HIGH;
+    }
+
     protected boolean isTrackable(Player player) {
         if (player == null) {
             return false;
@@ -247,7 +293,7 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         String name = player.getGameProfile().getName();
         PlayerTrackers created = new PlayerTrackers(
                 new ParkourActionTracker(!clientSide, state -> logAction(name, state)),
-                new MotionTracker(),
+                new MotionTracker(motionSource(), motionTrust(), fallSource(), fallTrust()),
                 player.level().dimension(),
                 name
         );
@@ -258,6 +304,7 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
     private void remove(UUID uuid, String reason) {
         PlayerTrackers removed = players.remove(uuid);
         if (removed != null) {
+            removed.motion.clear();
             LOGGER.info("[ParkourAdapter] cleanup side={} player={} reason={}",
                     sideName(), removed.name, reason);
         }
@@ -292,6 +339,34 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
                 snapshot.fallDistance(), snapshot.verticalVelocity(), snapshot.endReason());
     }
 
+    private void logMotion(String name, MotionSnapshot snapshot) {
+        if (!LOGGER.isDebugEnabled()) {
+            return;
+        }
+        ParkourActionState action = snapshot.actionState();
+        String actionType = action == null ? "NONE" : action.type().name();
+        String actionPhase = action == null ? "NONE" : action.phase().name();
+        String actionSource = action == null ? "NONE" : action.source().name();
+        String actionTrust = action == null ? "NONE" : action.trust().name();
+        FallSnapshot fall = snapshot.fallSnapshot();
+
+        LOGGER.debug(
+                "[MotionTracker] side={} player={} tick={} pos={} vel=({},{},{}) "
+                        + "hSpeed={} dir=({},{}) hAccel={} vAccel={} disp=({},{},{}) "
+                        + "movingTicks={} onGround={} motionSource={} motionTrust={} "
+                        + "fallPhase={} fallSource={} fallTrust={} "
+                        + "actionType={} actionPhase={} actionSource={} actionTrust={}",
+                sideName(), name, snapshot.sampleTick(), snapshot.position(),
+                snapshot.velocityX(), snapshot.velocityY(), snapshot.velocityZ(),
+                snapshot.horizontalSpeed(), snapshot.directionX(), snapshot.directionZ(),
+                snapshot.horizontalAcceleration(), snapshot.verticalAcceleration(),
+                snapshot.displacementX(), snapshot.displacementY(), snapshot.displacementZ(),
+                snapshot.continuousMotionTicks(), snapshot.onGround(),
+                snapshot.source(), snapshot.trust(),
+                fall.phase(), fall.source(), fall.trust(),
+                actionType, actionPhase, actionSource, actionTrust);
+    }
+
     private String sideName() {
         return clientSide ? "CLIENT" : "SERVER";
     }
@@ -302,6 +377,7 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         private final ResourceKey<Level> dimension;
         private final String name;
         private FallPhase lastFallPhase = FallPhase.NOT_FALLING;
+        private long lastMotionLogTick = -1L;
 
         private PlayerTrackers(ParkourActionTracker actions,
                                MotionTracker motion,
