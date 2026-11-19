@@ -177,9 +177,13 @@ $env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
 
 ## 8. Git 状态
 
-- 已执行 `git init`（本阶段允许）。
-- 按项目规则“阶段通过验收后创建 Git 提交”，**尚未提交**；等待用户审查确认后再提交。
-- `git status` 记录见交付消息。
+- 已执行 `git init`，并创建首次提交：
+  - `04082120d9ed14ee4c7fa2a8f996f1a967dff271`
+  - `Initial commit: ParkourCombat 2.0 Forge scaffold`
+- 首次提交包含 32 个文件：工程骨架、`libs/` 锁定 JAR、5 份阶段 01 审计报告、依赖清单、验收报告与 `docs/logs/` 日志。
+- 提交前已检查 `.gitignore`、敏感文件与构建产物；`build/`、`run/`、`.gradle/` 未提交。
+- 提交后工作区干净。
+- 补充核查文档（`docs/PHASE02_PREFLIGHT.md` 与本文件的 Git 状态更新）将在后续文档提交中记录。
 
 ---
 
@@ -213,4 +217,4 @@ $env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
 - 最小 Forge 工程已建立，锁定依赖与哈希已记录，`compileJava` / `build` 通过。
 - `runServer` 到达 `Done`，`runClient` 到达主菜单；均为**启动级**验收。
 - 未实现任何跑酷适配、战斗逻辑或 Mixin，符合本阶段范围限制。
-- 等待用户审查；确认后再进入 ParCoolAdapter 实现阶段并创建 Git 提交。
+- 工程骨架已提交；补充核查见 `docs/PHASE02_PREFLIGHT.md`。等待用户审查确认后，再进入 ParCoolAdapter 实现阶段。
