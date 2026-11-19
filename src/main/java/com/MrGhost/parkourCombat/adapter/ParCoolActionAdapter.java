@@ -117,7 +117,7 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         trackers.actions.onTick(gameTime, doing);
         trackers.motion.tick(player, gameTime);
 
-        FallSnapshot fall = trackers.motion.snapshot(source(), trust());
+        FallSnapshot fall = trackers.motion.snapshot(fallSource(), fallTrust());
         if (fall.phase() != trackers.lastFallPhase) {
             logFall(trackers.name, fall);
             trackers.lastFallPhase = fall.phase();
@@ -193,7 +193,7 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         if (trackers == null) {
             return Optional.empty();
         }
-        FallSnapshot snapshot = trackers.motion.snapshot(source(), trust());
+        FallSnapshot snapshot = trackers.motion.snapshot(fallSource(), fallTrust());
         return snapshot.phase() == FallPhase.NOT_FALLING
                 ? Optional.empty()
                 : Optional.of(snapshot);
@@ -218,6 +218,17 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         return clientSide ? ParkourTrust.MEDIUM : ParkourTrust.LOW;
     }
 
+    /**
+     * FALL is derived from vanilla physics, not from a ParCool sync packet.
+     */
+    protected ParkourStateSource fallSource() {
+        return ParkourStateSource.VANILLA_DERIVED;
+    }
+
+    protected ParkourTrust fallTrust() {
+        return clientSide ? ParkourTrust.MEDIUM : ParkourTrust.HIGH;
+    }
+
     protected boolean isTrackable(Player player) {
         if (player == null) {
             return false;
@@ -235,7 +246,7 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         }
         String name = player.getGameProfile().getName();
         PlayerTrackers created = new PlayerTrackers(
-                new ParkourActionTracker(clientSide, state -> logAction(name, state)),
+                new ParkourActionTracker(!clientSide, state -> logAction(name, state)),
                 new MotionTracker(),
                 player.level().dimension(),
                 name

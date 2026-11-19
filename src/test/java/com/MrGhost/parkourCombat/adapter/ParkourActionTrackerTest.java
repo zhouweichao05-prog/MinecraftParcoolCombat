@@ -74,6 +74,7 @@ class ParkourActionTrackerTest {
 
         ParkourActionState state = tracker.getState(ParkourActionType.FAST_RUN).orElseThrow();
         assertEquals(ParkourActionPhase.INTERRUPTED, state.phase());
+        assertFalse(state.inferred());
         assertTrue(state.evidence().contains("REPLACED_BY"));
     }
 
