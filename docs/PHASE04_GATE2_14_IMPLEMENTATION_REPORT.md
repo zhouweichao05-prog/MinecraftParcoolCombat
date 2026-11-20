@@ -24,6 +24,19 @@ CombatGate210RegressionTest.java
 CombatGate214CompletionTest.java
 ```
 
+### 生产代码最小重构
+
+`CombatAttackTracker` 生产入口与测试入口现在共享：
+
+```text
+dispatchAttack
+dispatchLiving
+isLateTarget
+recordLate
+```
+
+未改变 C09/H09 语义。
+
 ### 未修改
 
 ```text
@@ -116,8 +129,8 @@ jar：157,396 bytes
 ```
 
 ```text
-CLIENT-STARTED（Setting user: Dev）
-SERVER-STARTED（Done 9.043s）
+CLIENT-STARTED（Setting user: Dev，12:57）
+SERVER-STARTED（Done 8.459s，12:56）
 CLIENT-TESTED：NO
 SERVER-TESTED：NO
 MULTIPLAYER-TESTED：NO
@@ -132,8 +145,8 @@ MULTIPLAYER-TESTED：NO
 ```text
 仓库：https://github.com/zhouweichao05-prog/MinecraftParcoolCombat.git
 分支：gate-2.14-test-fixes
-本地提交：1e3295a
-提交说明：test: complete Gate 2.14 regression coverage
+测试提交：b3826b6
+说明：test: complete Gate 2.14 production-path coverage
 远程推送：SUCCESS
 PUSHED_TO_REMOTE：YES
 ```
