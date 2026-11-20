@@ -3,87 +3,89 @@
 > Phase 04 Gate 2.14 — C09-M01 修复与测试补全实施  
 > 依据：`docs/PHASE04_GATE2_13_REMEDIATION_DESIGN.md`  
 > 最终：CONDITIONALLY_IMPLEMENTED  
-> 未进入 Phase 05；未创建 Git commit。
+> 未进入 Phase 05。
 
 ---
 
-## 1. 实际修改
+## 1. 修改文件
 
-### 新增源码
+### 生产代码（当前分支已包含）
 
 ```text
 CombatRecentTargetLookup.java
-```
-
-### 修改源码
-
-```text
 CombatAttackTracker.java
-CombatTargetRegistry.java   // package-private counter seeding for tests
+CombatTargetRegistry.java   // package-private counter seeding
 ```
 
-### 新增测试
-
-```text
-CombatGate214RegressionTest.java
-CombatGate214CompletionTest.java
-```
-
-### 修改测试
+### 本轮实际修改测试
 
 ```text
 CombatGate210RegressionTest.java
-  recordLateForTest -> recordLateDiagnosticForTest
+CombatGate214CompletionTest.java
 ```
 
-未修改 `CombatAttackSession` 的 H09 逻辑、Handler、Gradle、依赖或第三方 JAR。
+### 未修改
+
+```text
+CombatAttackSession 的 H09 条件
+CombatTargetState
+BetterCombatCompat / BetterCombatAttackAdapter
+Gradle / 依赖 / 第三方 JAR
+```
 
 ---
 
-## 2. C09-M01 修复
+## 2. 本轮测试修复
 
-### parent UUID 聚合
+### S06
 
-`CombatAttackTracker.recentTargets` 现在聚合：
+已改为真实 `CombatAttackSession.observeLivingEvent` -> `addEvent` 生产路径：
+
+- A 前 8 条；
+- A 第 9 条 -> `eventDetailTruncatedTargetCount=1`；
+- A 第 10/11 条不重复；
+- B 前 8 条 + 第 9 条 -> 计数再 +1；
+- final = 2。
+
+不使用 `Long.MAX_VALUE - 1` 初始化。
+
+### 512 边界
+
+`lookupDuplicateDoesNotConsumeCapacityOrTruncate` 已覆盖：
+
+- 511 唯一 UUID + 重复 -> 511，未截断；
+- 第 512 个 -> 512，未截断；
+- 第 513 个 -> truncated，未保存；
+- 截断后重复已有 UUID -> 不改变容量/状态。
+
+### parent/普通 UUID 混合
+
+`parentAndNormalUUIDShareOneLookupSlot` 已改为真实 Context：
+
+- 普通目标 UUID N；
+- PartEntity C parent N；
+- Tracker recent lookup；
+- N 与 C 各占一个位置，N 不重复计数。
+
+### 旧测试名称
+
+`eventDetailAndTargetOverflowCountersAreIndependent`
+已重命名为：
 
 ```text
-requestedTargets
-validAttackTargets
-observedPartUuids
-requestedPartParentUuids.values()
-observedPartParentUuids.values()
+targetBudgetAndOverflowEventCountersAreIndependent
 ```
 
-### 512 去重上限
+### 子集关系
 
-`CombatRecentTargetLookup`：
-
-- 先查重；
-- 已存在不消耗容量；
-- 唯一 UUID 数量为 512 时设置 truncated；
-- 不加入第 513 个；
-- 不保存溢出 UUID。
-
-### isLateTarget 三分
+S02/S04/S08/S09 覆盖：
 
 ```text
-LATE_MATCHED
-NOT_LATE
-UNKNOWN_TRUNCATED
+part <= target
+overflowCanceled <= overflowEvent
+latePart <= lateEvent
+lateCanceled <= lateEvent
 ```
-
-UNKNOWN_TRUNCATED 只增加 `lateUnknownEventCount`，不调用 active Session。
-
-### Tracker 计数
-
-```text
-lateEventCount
-latePartEventCount
-lateCanceledEventCount
-lateUnknownEventCount
-```
-
-long、饱和递增、生命周期重置、不保存 UUID。
 
 ---
 
@@ -92,85 +94,61 @@ long、饱和递增、生命周期重置、不保存 UUID。
 ```text
 原有 115 项：保留并通过
 Gate 2.14 新增：23 项
-总计：138/138 passed / 0 failed
+当前总计：138/138 passed / 0 failed
 ```
 
-### 本轮新增 14 项
+设计目标为 159；实际缺少 21 项：
 
-```text
-s01TargetBudgetOverflowSaturatesThroughAdmit
-s02PartBudgetOverflowSaturatesThroughAdmit
-s03OverflowEventSaturatesThroughRecordOverflowEvent
-s04OverflowCanceledSaturatesThroughRecordOverflowEvent
-s05EventDetailOverflowSaturatesThroughTargetStateRecord
-s06TruncatedTargetCounterSaturatesThroughTwoTargets
-s07LateEventSaturatesThroughTrackerDispatch
-s08LatePartSaturatesThroughTrackerDispatch
-s09LateCanceledSaturatesThroughTrackerDispatch
-s10LateUnknownSaturatesThroughTruncatedDispatch
-lookup511And512AreNotTruncated
-lookup513TruncatesWithoutStoring
-lookupDuplicateDoesNotConsumeCapacityOrTruncate
-parentAndNormalUUIDShareOneLookupSlot
-```
-
-### 仍然缺失
-
-设计目标 159，实际 138；缺少 21 项：
-
-- C09 A-H 的部分完整断言；
-- CNT13-T01～T26 全部独立测试；
-- 部分 S 测试的拆分组合；
-- 四组饱和子集的独立测试；
-- 真实 Forge Event；
-- 真实 PartEntity；
-- Multiplayer / 生命周期 / 停服。
-
-这些为 `PARTIAL` 或 `NOT_TESTED`，不能写成 PASSED。
+- 部分 C09 A-H 完整断言；
+- 部分 CNT13-T 独立测试；
+- 部分 S 组合；
+- 真实 Forge/PartEntity/多人/生命周期测试。
 
 ---
 
-## 4. 编译、测试、构建
+## 4. 构建与启动
 
 ```text
 compileJava：BUILD SUCCESSFUL
 test：138/138 passed
 build：BUILD SUCCESSFUL
-jar：build/libs/parkourcombat-2.0.0-alpha.1.jar
-size：157,396 bytes
+jar：157,396 bytes
 ```
 
----
-
-## 5. Client / Server
-
 ```text
-Client：Setting user: Dev
-CLIENT-STARTED
+CLIENT-STARTED（Setting user: Dev）
+SERVER-STARTED（Done 9.043s）
 CLIENT-TESTED：NO
-```
-
-```text
-Server：Done (9.043s)
-SERVER-STARTED
 SERVER-TESTED：NO
+MULTIPLAYER-TESTED：NO
 ```
 
-启动不代表战斗链验证。
+启动不是战斗链验证。
 
 ---
 
-## 6. Handler
+## 5. Git 与推送
 
 ```text
-orderingKnown = false
-handlerIdentity = UNKNOWN_PREEXISTING
-installationState = DEGRADED_OR_UNKNOWN
+仓库：https://github.com/zhouweichao05-prog/MinecraftParcoolCombat.git
+分支：gate-2.14-test-fixes
+本地提交：1e3295a
+提交说明：test: complete Gate 2.14 regression coverage
+远程推送：SUCCESS
+PUSHED_TO_REMOTE：YES
 ```
+
+当前工作区仅有未跟踪日志：
+
+```text
+docs/logs/test-gate214-fixes.log
+```
+
+已跟踪源码/测试均已提交。
 
 ---
 
-## 7. 依赖 SHA-256
+## 6. 依赖 SHA-256
 
 ```text
 bettercombat-forge-1.9.0+1.20.1.jar
@@ -188,32 +166,20 @@ cloth-config-11.1.136-forge.jar
 
 ---
 
-## 8. Git
-
-```text
-分支：master
-HEAD：170ea5bc29c3660525431263d07c3b79a9094f69
-已跟踪文件改动：无
-Git commit：无
-```
-
-未执行 git add / commit。
-
----
-
-## 9. 最终状态
+## 7. 最终状态
 
 ```text
 IMPLEMENTED
 COMPILED
 TESTED（138/138）
-CLIENT-STARTED：YES
-SERVER-STARTED：YES
+CLIENT-STARTED
+SERVER-STARTED
 CLIENT-TESTED：NO
 SERVER-TESTED：NO
 MULTIPLAYER-TESTED：NO
 VERIFIED：NO
+PUSHED_TO_REMOTE
 CONDITIONALLY_IMPLEMENTED
 ```
 
-S01-S10 和 511/512/513 边界已实现；设计目标 159 项尚未全部完成。
+S06 生产路径、512 边界和 parent 去重已补测；设计 159 项目标仍未全部完成，不能标记 VERIFIED。
