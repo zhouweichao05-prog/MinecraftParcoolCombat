@@ -1,5 +1,6 @@
 package com.MrGhost.parkourCombat.debug;
 
+import com.MrGhost.parkourCombat.network.ClientboundCombatDebugSnapshot;
 import com.MrGhost.parkourCombat.network.ClientboundMotionDebugSnapshot;
 
 /**
@@ -10,6 +11,7 @@ import com.MrGhost.parkourCombat.network.ClientboundMotionDebugSnapshot;
  */
 public final class DebugSnapshotInbox {
     private static ClientboundMotionDebugSnapshot latest;
+    private static ClientboundCombatDebugSnapshot latestCombat;
 
     private DebugSnapshotInbox() {
     }
@@ -26,6 +28,17 @@ public final class DebugSnapshotInbox {
 
     public static void clear() {
         latest = null;
+        latestCombat = null;
+    }
+
+    public static void offerCombat(ClientboundCombatDebugSnapshot snapshot) {
+        latestCombat = snapshot;
+    }
+
+    public static ClientboundCombatDebugSnapshot pollCombat() {
+        ClientboundCombatDebugSnapshot current = latestCombat;
+        latestCombat = null;
+        return current;
     }
 
     public static boolean isEmpty() {

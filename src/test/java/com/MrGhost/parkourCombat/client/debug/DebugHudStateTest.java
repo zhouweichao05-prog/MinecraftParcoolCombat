@@ -31,12 +31,12 @@ class DebugHudStateTest {
         String clientText = text(state.getClientLines());
         String serverText = text(state.getServerLines());
 
-        assertTrue(clientText.contains("motionSource=CLIENT_LOCAL"));
-        assertTrue(clientText.contains("history=12 / 20"));
-        assertTrue(serverText.contains("motionSource=SERVER_NATIVE"));
-        assertTrue(serverText.contains("history=8 / 20"));
-        assertTrue(serverText.contains("serverAuthoritative=true"));
-        assertFalse(clientText.contains("SERVER_NATIVE"));
+        assertTrue(clientText.contains("运动来源：客户端本地数据"));
+        assertTrue(clientText.contains("历史：12 / 20"));
+        assertTrue(serverText.contains("运动来源：服务端原生数据"));
+        assertTrue(serverText.contains("历史：8 / 20"));
+        assertTrue(serverText.contains("服务端权威：true"));
+        assertFalse(clientText.contains("服务端原生数据"));
     }
 
     @Test
@@ -47,7 +47,7 @@ class DebugHudStateTest {
         state.acceptServer(ClientboundMotionDebugSnapshot.empty());
         state.refresh();
 
-        assertTrue(text(state.getServerLines()).contains("NO SNAPSHOT"));
+        assertTrue(text(state.getServerLines()).contains("无数据"));
         assertFalse(text(state.getServerLines()).contains("CLIENT_LOCAL"));
     }
 
@@ -61,14 +61,14 @@ class DebugHudStateTest {
         }
         state.refresh();
         assertTrue(state.isServerStale());
-        assertTrue(text(state.getServerLines()).contains("STALE"));
+        assertTrue(text(state.getServerLines()).contains("数据已过期"));
 
         for (int i = 0; i < DebugHudState.DROP_AFTER_TICKS - 10; i++) {
             state.tickServerAge();
         }
         state.refresh();
         assertNull(state.getServerSnapshot());
-        assertTrue(text(state.getServerLines()).contains("NO SNAPSHOT"));
+        assertTrue(text(state.getServerLines()).contains("无数据"));
     }
 
     @Test
@@ -79,8 +79,8 @@ class DebugHudStateTest {
         state.refresh();
 
         assertNull(state.getClientSnapshot());
-        assertTrue(text(state.getClientLines()).contains("NO SNAPSHOT"));
-        assertTrue(text(state.getServerLines()).contains("SERVER_NATIVE"));
+        assertTrue(text(state.getClientLines()).contains("无数据"));
+        assertTrue(text(state.getServerLines()).contains("服务端原生数据"));
     }
 
     @Test

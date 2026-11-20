@@ -30,10 +30,10 @@ public final class DebugHudOverlay implements IGuiOverlay {
         int y = 8;
 
         drawPanel(graphics, font, leftX, y, panelWidth,
-                "CLIENT LOCAL", CLIENT_HEADER,
+                "客户端本地数据", CLIENT_HEADER,
                 ClientDebugTick.STATE.getClientLines());
         drawPanel(graphics, font, rightX, y, panelWidth,
-                "SERVER (DEBUG PACKET)", SERVER_HEADER,
+                "服务端观察数据", SERVER_HEADER,
                 ClientDebugTick.STATE.getServerLines());
     }
 
@@ -47,7 +47,7 @@ public final class DebugHudOverlay implements IGuiOverlay {
         graphics.drawString(font, title, x + 2, y, titleColor, false);
         int lineY = y + 14;
         if (lines.isEmpty()) {
-            graphics.drawString(font, "NO SNAPSHOT", x + 2, lineY, 0xFFFF5555, false);
+            graphics.drawString(font, "无数据", x + 2, lineY, 0xFFFF5555, false);
             return;
         }
         for (HudLine line : lines) {

@@ -114,6 +114,10 @@ public final class ClientDebugTick {
             } else {
                 STATE.tickServerAge();
             }
+            var combat = DebugSnapshotInbox.pollCombat();
+            if (combat != null) {
+                STATE.acceptCombat(combat);
+            }
         }
 
         if (tickCounter % 4 == 0) {

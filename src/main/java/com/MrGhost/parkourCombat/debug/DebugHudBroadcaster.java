@@ -4,6 +4,10 @@ import com.MrGhost.parkourCombat.ParkourCombat;
 import com.MrGhost.parkourCombat.adapter.MotionSnapshot;
 import com.MrGhost.parkourCombat.adapter.ParCoolActionAdapter;
 import com.MrGhost.parkourCombat.adapter.ParkourAdapterEvents;
+import com.MrGhost.parkourCombat.combat.CombatBridge;
+import com.MrGhost.parkourCombat.combat.CombatAttackContext;
+import com.MrGhost.parkourCombat.compat.bettercombat.BetterCombatCompat;
+import com.MrGhost.parkourCombat.network.ClientboundCombatDebugSnapshot;
 import com.MrGhost.parkourCombat.network.ClientboundMotionDebugSnapshot;
 import com.MrGhost.parkourCombat.network.DebugNetwork;
 import java.util.Optional;
@@ -56,6 +60,13 @@ public final class DebugHudBroadcaster {
             ClientboundMotionDebugSnapshot packet =
                     ClientboundMotionDebugSnapshot.from(snapshot.orElse(null), count, capacity);
             DebugNetwork.sendSnapshot(player, packet);
+
+            CombatAttackContext context = CombatBridge.latestContextForHud(player);
+            ClientboundCombatDebugSnapshot combat = ClientboundCombatDebugSnapshot.from(
+                    context,
+                    BetterCombatCompat.installationState().name(),
+                    BetterCombatCompat.handlerIdentity().name());
+            DebugNetwork.sendCombatSnapshot(player, combat);
         }
     }
 

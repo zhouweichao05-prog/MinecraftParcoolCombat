@@ -76,6 +76,15 @@ public final class CombatAttackTracker {
         }
     }
 
+    /** Server-thread read-only HUD query: latest sealed context, never mutable. */
+    public CombatAttackContext latestContextForHud(ServerPlayer player) {
+        if (player == null) {
+            return null;
+        }
+        PlayerState state = players.get(player.getUUID());
+        return state == null || state.recent.isEmpty() ? null : state.recent.peekLast();
+    }
+
     public void markOriginalThrew(long attackId) {
         CombatAttackSession session = activeSession(attackId);
         if (session != null) {

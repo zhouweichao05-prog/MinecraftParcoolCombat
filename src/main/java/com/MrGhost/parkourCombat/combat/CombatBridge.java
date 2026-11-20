@@ -47,6 +47,11 @@ public final class CombatBridge {
         weaponProvider = provider;
     }
 
+    /** Server-thread-only HUD read; returns the latest sealed context. */
+    public static CombatAttackContext latestContextForHud(ServerPlayer player) {
+        return TRACKER.latestContextForHud(player);
+    }
+
     /**
      * Called on the network thread by the optional compat wrapper.
      *

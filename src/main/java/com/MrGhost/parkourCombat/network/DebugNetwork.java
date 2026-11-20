@@ -53,6 +53,13 @@ public final class DebugNetwork {
                 .consumerMainThread(ClientboundMotionDebugSnapshot::handle)
                 .add();
 
+        created.messageBuilder(ClientboundCombatDebugSnapshot.class,
+                        2, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(ClientboundCombatDebugSnapshot::encode)
+                .decoder(ClientboundCombatDebugSnapshot::decode)
+                .consumerMainThread(ClientboundCombatDebugSnapshot::handle)
+                .add();
+
         channel = created;
     }
 
@@ -69,6 +76,14 @@ public final class DebugNetwork {
 
     public static void sendSnapshot(ServerPlayer player,
                                     ClientboundMotionDebugSnapshot snapshot) {
+        SimpleChannel current = channel;
+        if (current != null && player != null) {
+            current.send(PacketDistributor.PLAYER.with(() -> player), snapshot);
+        }
+    }
+
+    public static void sendCombatSnapshot(ServerPlayer player,
+                                          ClientboundCombatDebugSnapshot snapshot) {
         SimpleChannel current = channel;
         if (current != null && player != null) {
             current.send(PacketDistributor.PLAYER.with(() -> player), snapshot);
