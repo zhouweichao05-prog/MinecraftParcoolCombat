@@ -111,6 +111,11 @@ final class CombatAttackSession {
         }
     }
 
+    /** FOR_TEST_ONLY: seed a registry counter through the controlled registry seam. */
+    void seedRegistryCounterForTest(CombatTargetRegistry.Counter counter, long value) {
+        registry.seedCounterForTest(counter, value);
+    }
+
     void prepare(ServerPlayer player) {
         ServerLevel level = player.serverLevel();
         int[] rawIds = request.targetIds();

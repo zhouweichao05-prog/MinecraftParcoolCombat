@@ -33,41 +33,64 @@ class CombatGate214CompletionTest {
     }
 
     @Test
-    void s03OverflowEventSaturatesThroughRecordOverflowEvent() {
-        CombatTargetRegistry registry = new CombatTargetRegistry();
-        registry.seedCounterForTest(CombatTargetRegistry.Counter.OVERFLOW_EVENT, Long.MAX_VALUE - 1);
-        registry.recordOverflowEvent(false);
-        registry.recordOverflowEvent(false);
-        assertEquals(Long.MAX_VALUE, registry.overflowEventCount());
-        assertEquals(0L, registry.overflowCanceledEventCount());
-    }
-
-    @Test
-    void s04OverflowCanceledSaturatesThroughRecordOverflowEvent() {
-        CombatTargetRegistry registry = new CombatTargetRegistry();
-        registry.seedCounterForTest(CombatTargetRegistry.Counter.OVERFLOW_EVENT, Long.MAX_VALUE - 1);
-        registry.seedCounterForTest(CombatTargetRegistry.Counter.OVERFLOW_CANCELED, Long.MAX_VALUE - 1);
-        registry.recordOverflowEvent(true);
-        registry.recordOverflowEvent(true);
-        assertEquals(Long.MAX_VALUE, registry.overflowEventCount());
-        assertEquals(Long.MAX_VALUE, registry.overflowCanceledEventCount());
-        assertTrue(registry.overflowCanceledEventCount() <= registry.overflowEventCount());
-    }
-
-    @Test
-    void s05EventDetailOverflowSaturatesThroughTargetStateRecord() {
-        CombatTargetRegistry registry = new CombatTargetRegistry();
-        CombatTargetState state = registry.admit(UUID.randomUUID(),
-                CombatTargetState.Kind.NORMAL, null, false);
-        for (int i = 0; i < 8; i++) {
-            state.record(event(), 8, registry::recordDetailOverflow);
+    void s03OverflowEventSaturatesThroughSessionProductionPath() {
+        Set<UUID> targets = new LinkedHashSet<>();
+        for (int i = 0; i < 65; i++) {
+            targets.add(UUID.randomUUID());
         }
-        registry.seedCounterForTest(CombatTargetRegistry.Counter.EVENT_DETAIL_OVERFLOW,
+        CombatAttackSession session = session(UUID.randomUUID(), 1L, targets, Set.of(), Map.of(),
+                CombatTargetCoverage.COMPLETE);
+        UUID overflowTarget = targets.stream().reduce((a, b) -> b).orElseThrow();
+        session.seedRegistryCounterForTest(CombatTargetRegistry.Counter.OVERFLOW_EVENT,
                 Long.MAX_VALUE - 1);
-        state.record(event(), 8, registry::recordDetailOverflow);
-        state.record(event(), 8, registry::recordDetailOverflow);
-        assertEquals(Long.MAX_VALUE, registry.eventDetailOverflowCount());
-        assertEquals(8, state.events().size());
+        session.markExecuting();
+        session.observeLivingEvent(overflowTarget, CombatEventType.LIVING_HURT, 1.0F, false);
+        session.observeLivingEvent(overflowTarget, CombatEventType.LIVING_HURT, 1.0F, false);
+        CombatAttackContext context = session.finish(CombatAttackEndReason.NORMAL_FINISH);
+        assertEquals(Long.MAX_VALUE, context.overflowEventCount());
+        assertEquals(0L, context.overflowCanceledEventCount());
+    }
+
+    @Test
+    void s04OverflowCanceledSaturatesThroughSessionProductionPath() {
+        Set<UUID> targets = new LinkedHashSet<>();
+        for (int i = 0; i < 65; i++) {
+            targets.add(UUID.randomUUID());
+        }
+        CombatAttackSession session = session(UUID.randomUUID(), 1L, targets, Set.of(), Map.of(),
+                CombatTargetCoverage.COMPLETE);
+        UUID overflowTarget = targets.stream().reduce((a, b) -> b).orElseThrow();
+        session.seedRegistryCounterForTest(CombatTargetRegistry.Counter.OVERFLOW_EVENT,
+                Long.MAX_VALUE - 1);
+        session.seedRegistryCounterForTest(CombatTargetRegistry.Counter.OVERFLOW_CANCELED,
+                Long.MAX_VALUE - 1);
+        session.markExecuting();
+        session.observeLivingEvent(overflowTarget, CombatEventType.LIVING_HURT, 1.0F, true);
+        session.observeLivingEvent(overflowTarget, CombatEventType.LIVING_HURT, 1.0F, true);
+        CombatAttackContext context = session.finish(CombatAttackEndReason.NORMAL_FINISH);
+        assertEquals(Long.MAX_VALUE, context.overflowEventCount());
+        assertEquals(Long.MAX_VALUE, context.overflowCanceledEventCount());
+        assertTrue(context.overflowCanceledEventCount() <= context.overflowEventCount());
+    }
+
+    @Test
+    void s05EventDetailOverflowSaturatesThroughSessionProductionPath() {
+        UUID player = UUID.randomUUID();
+        UUID target = UUID.randomUUID();
+        CombatAttackSession session = session(player, 1L, Set.of(target), Set.of(), Map.of(),
+                CombatTargetCoverage.COMPLETE);
+        session.seedRegistryCounterForTest(CombatTargetRegistry.Counter.EVENT_DETAIL_OVERFLOW,
+                Long.MAX_VALUE - 1);
+        session.markExecuting();
+        for (int i = 0; i < 8; i++) {
+            session.observeLivingEvent(target, CombatEventType.LIVING_HURT, 1.0F, false);
+        }
+        session.observeLivingEvent(target, CombatEventType.LIVING_HURT, 1.0F, false);
+        session.observeLivingEvent(target, CombatEventType.LIVING_HURT, 1.0F, false);
+        CombatAttackContext context = session.finish(CombatAttackEndReason.NORMAL_FINISH);
+        assertEquals(Long.MAX_VALUE, context.eventDetailOverflowCount());
+        assertEquals(1, context.eventDetailTruncatedTargetCount());
+        assertEquals(8, context.targetEventObservations().get(target).observations().size());
     }
 
     @Test
@@ -90,6 +113,29 @@ class CombatGate214CompletionTest {
         session.observeLivingEvent(b, CombatEventType.LIVING_HURT, 1.0F, false);
         CombatAttackContext context = session.finish(CombatAttackEndReason.NORMAL_FINISH);
         assertEquals(2, context.eventDetailTruncatedTargetCount());
+    }
+
+    @Test
+    void s06TruncatedTargetCounterSaturatesThroughSessionProductionPath() {
+        UUID player = UUID.randomUUID();
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        CombatAttackSession session = session(player, 1L, Set.of(a, b), Set.of(), Map.of(),
+                CombatTargetCoverage.COMPLETE);
+        session.seedRegistryCounterForTest(
+                CombatTargetRegistry.Counter.EVENT_DETAIL_TRUNCATED_TARGET, Long.MAX_VALUE - 1);
+        session.markExecuting();
+        for (int i = 0; i < 8; i++) {
+            session.observeLivingEvent(a, CombatEventType.LIVING_HURT, 1.0F, false);
+        }
+        session.observeLivingEvent(a, CombatEventType.LIVING_HURT, 1.0F, false);
+        for (int i = 0; i < 8; i++) {
+            session.observeLivingEvent(b, CombatEventType.LIVING_HURT, 1.0F, false);
+        }
+        session.observeLivingEvent(b, CombatEventType.LIVING_HURT, 1.0F, false);
+        session.observeLivingEvent(a, CombatEventType.LIVING_HURT, 1.0F, false);
+        CombatAttackContext context = session.finish(CombatAttackEndReason.NORMAL_FINISH);
+        assertEquals(Long.MAX_VALUE, context.eventDetailTruncatedTargetCount());
     }
 
     @Test
