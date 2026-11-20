@@ -86,7 +86,7 @@ class CombatGate210RegressionTest {
     }
 
     @Test
-    void eventDetailAndTargetOverflowCountersAreIndependent() {
+    void targetBudgetAndOverflowEventCountersAreIndependent() {
         Set<UUID> targets = new LinkedHashSet<>();
         for (int i = 0; i < 65; i++) {
             targets.add(UUID.randomUUID());

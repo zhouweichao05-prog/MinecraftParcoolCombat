@@ -71,22 +71,25 @@ class CombatGate214CompletionTest {
     }
 
     @Test
-    void s06TruncatedTargetCounterSaturatesThroughTwoTargets() {
-        CombatTargetRegistry registry = new CombatTargetRegistry();
-        CombatTargetState a = registry.admit(UUID.randomUUID(),
-                CombatTargetState.Kind.NORMAL, null, false);
-        CombatTargetState b = registry.admit(UUID.randomUUID(),
-                CombatTargetState.Kind.NORMAL, null, false);
+    void s06TruncatedTargetCounterUsesSessionAddEventProductionPath() {
+        UUID player = UUID.randomUUID();
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        CombatAttackSession session = session(player, 1L, Set.of(a, b), Set.of(), Map.of(),
+                CombatTargetCoverage.COMPLETE);
+        session.markExecuting();
         for (int i = 0; i < 8; i++) {
-            a.record(event(), 8, registry::recordDetailOverflow);
-            b.record(event(), 8, registry::recordDetailOverflow);
+            session.observeLivingEvent(a, CombatEventType.LIVING_HURT, 1.0F, false);
         }
-        registry.seedCounterForTest(CombatTargetRegistry.Counter.EVENT_DETAIL_TRUNCATED_TARGET,
-                Long.MAX_VALUE - 1);
-        a.record(event(), 8, registry::incrementTruncatedTargetCount);
-        b.record(event(), 8, registry::incrementTruncatedTargetCount);
-        a.record(event(), 8, registry::incrementTruncatedTargetCount);
-        assertEquals(Long.MAX_VALUE, registry.eventDetailTruncatedTargetCount());
+        session.observeLivingEvent(a, CombatEventType.LIVING_HURT, 1.0F, false);
+        session.observeLivingEvent(a, CombatEventType.LIVING_HURT, 1.0F, false);
+        session.observeLivingEvent(a, CombatEventType.LIVING_HURT, 1.0F, false);
+        for (int i = 0; i < 8; i++) {
+            session.observeLivingEvent(b, CombatEventType.LIVING_HURT, 1.0F, false);
+        }
+        session.observeLivingEvent(b, CombatEventType.LIVING_HURT, 1.0F, false);
+        CombatAttackContext context = session.finish(CombatAttackEndReason.NORMAL_FINISH);
+        assertEquals(2, context.eventDetailTruncatedTargetCount());
     }
 
     @Test
@@ -187,24 +190,50 @@ class CombatGate214CompletionTest {
     @Test
     void lookupDuplicateDoesNotConsumeCapacityOrTruncate() {
         CombatRecentTargetLookup lookup = new CombatRecentTargetLookup();
-        UUID same = UUID.randomUUID();
+        Set<UUID> ids = new LinkedHashSet<>();
         for (int i = 0; i < 511; i++) {
-            lookup.add(UUID.randomUUID());
+            UUID id = UUID.randomUUID();
+            ids.add(id);
+            lookup.add(id);
         }
-        lookup.add(same);
-        assertEquals(512, lookup.size());
-        lookup.add(same);
+        UUID existing = ids.iterator().next();
+        lookup.add(existing);
+        assertEquals(511, lookup.size());
         assertFalse(lookup.truncated());
+
+        UUID twelfth = UUID.randomUUID();
+        lookup.add(twelfth);
+        assertEquals(512, lookup.size());
+        assertFalse(lookup.truncated());
+
+        UUID thirteenth = UUID.randomUUID();
+        lookup.add(thirteenth);
+        assertTrue(lookup.truncated());
+        assertEquals(512, lookup.size());
+        assertFalse(lookup.contains(thirteenth));
+
+        lookup.add(existing);
+        assertTrue(lookup.truncated());
         assertEquals(512, lookup.size());
     }
 
     @Test
     void parentAndNormalUUIDShareOneLookupSlot() {
-        CombatRecentTargetLookup lookup = new CombatRecentTargetLookup();
-        UUID same = UUID.randomUUID();
-        lookup.add(same);
-        lookup.add(same);
-        assertEquals(1, lookup.size());
+        UUID player = UUID.randomUUID();
+        UUID normal = UUID.randomUUID();
+        UUID part = UUID.randomUUID();
+        CombatAttackSession session = session(player, 1L, Set.of(normal), Set.of(part),
+                Map.of(part, normal), CombatTargetCoverage.PARTIAL_PART);
+        session.markExecuting();
+        session.observeAttackTarget(part, true, normal, false);
+        CombatAttackTracker tracker = new CombatAttackTracker();
+        tracker.seedRecentContextForTest(player,
+                session.finish(CombatAttackEndReason.NORMAL_FINISH, 0L));
+
+        CombatRecentTargetLookup lookup = tracker.recentLookupForTest(player);
+        assertEquals(2, lookup.size());
+        assertTrue(lookup.contains(normal));
+        assertTrue(lookup.contains(part));
         assertFalse(lookup.truncated());
     }
 
