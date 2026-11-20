@@ -1,0 +1,29 @@
+[2011月2026 10:49:05.234] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgeclientuserdev, --version, MOD_DEV, --assetIndex, 5, --assetsDir, D:\McMod\.gradle\caches\forge_gradle\assets, --gameDir, ., --fml.forgeVersion, 47.4.0, --fml.mcVersion, 1.20.1, --fml.forgeGroup, net.minecraftforge, --fml.mcpVersion, 20230612.114412]
+[2011月2026 10:49:05.241] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher 10.0.9+10.0.9+main.dcd20f30 starting: java version 17.0.12 by Oracle Corporation; OS Windows 11 arch amd64 version 10.0
+[2011月2026 10:49:05.365] [main/INFO] [net.minecraftforge.fml.loading.ImmediateWindowHandler/]: Loading ImmediateWindowProvider fmlearlywindow
+[2011月2026 10:49:05.448] [main/INFO] [EARLYDISPLAY/]: Trying GL version 4.6
+[2011月2026 10:49:05.670] [main/INFO] [EARLYDISPLAY/]: Requested GL version 4.6 got version 4.6
+[2011月2026 10:49:05.768] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.5 Source=union:/D:/McMod/.gradle/caches/modules-2/files-2.1/org.spongepowered/mixin/0.8.5/9d1c0c3a304ae6697ecd477218fa61b850bf57fc/mixin-0.8.5.jar%23128!/ Service=ModLauncher Env=CLIENT
+[2011月2026 10:49:05.837] [pool-2-thread-1/INFO] [EARLYDISPLAY/]: GL info: NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2 GL version 4.6.0 NVIDIA 621.01, NVIDIA Corporation
+[2011月2026 10:49:06.255] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file D:\McMod\.gradle\caches\modules-2\files-2.1\net.minecraftforge\javafmllanguage\1.20.1-47.4.0\f0c0b352173d0a378cbdcec9cfc4ba65899a721\javafmllanguage-1.20.1-47.4.0.jar is missing mods.toml file
+[2011月2026 10:49:06.265] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file D:\McMod\.gradle\caches\modules-2\files-2.1\net.minecraftforge\lowcodelanguage\1.20.1-47.4.0\e862740d8c84d08dbfedea412bef88fe42e727c5\lowcodelanguage-1.20.1-47.4.0.jar is missing mods.toml file
+[2011月2026 10:49:06.275] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file D:\McMod\.gradle\caches\modules-2\files-2.1\net.minecraftforge\mclanguage\1.20.1-47.4.0\5719b3a297a33f877ed5dde4cb4bd75c859096af\mclanguage-1.20.1-47.4.0.jar is missing mods.toml file
+[2011月2026 10:49:06.286] [main/WARN] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/LOADING]: Mod file D:\McMod\.gradle\caches\modules-2\files-2.1\net.minecraftforge\fmlcore\1.20.1-47.4.0\235975dafa4309945b59c56b53f31dc5b65a6051\fmlcore-1.20.1-47.4.0.jar is missing mods.toml file
+[2011月2026 10:49:06.620] [main/INFO] [net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator/]: Found 2 dependencies adding them to mods collection
+[2011月2026 10:49:08.684] [main/INFO] [mixin/]: Compatibility level set to JAVA_17
+[2011月2026 10:49:08.691] [main/INFO] [cpw.mods.modlauncher.LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgeclientuserdev' with arguments [--version, MOD_DEV, --gameDir, ., --assetsDir, D:\McMod\.gradle\caches\forge_gradle\assets, --assetIndex, 5]
+[2011月2026 10:49:09.329] [main/INFO] [mixin/]: Remapping refMap player-animation-lib-minecraft_common-refmap.json using D:\MinecraftParcoolCombat/build/createSrgToMcp/output.srg
+[2011月2026 10:49:09.331] [main/INFO] [mixin/]: Remapping refMap bettercombat-common-common-refmap.json using D:\MinecraftParcoolCombat/build/createSrgToMcp/output.srg
+[2011月2026 10:49:09.336] [main/INFO] [mixin/]: Remapping refMap parcool.refmap.json using D:\MinecraftParcoolCombat/build/createSrgToMcp/output.srg
+[2011月2026 10:49:09.641] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.2.0).
+[2011月2026 10:49:14.034] [Datafixer Bootstrap/INFO] [com.mojang.datafixers.DataFixerBuilder/]: 188 Datafixer optimizations took 161 milliseconds
+[2011月2026 10:49:15.687] [Render thread/WARN] [net.minecraft.server.packs.VanillaPackResourcesBuilder/]: Assets URL 'union:/D:/McMod/.gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.20.1-47.4.0_mapped_official_1.20.1/forge-1.20.1-47.4.0_mapped_official_1.20.1.jar%23191!/assets/.mcassetsroot' uses unexpected schema
+[2011月2026 10:49:15.687] [Render thread/WARN] [net.minecraft.server.packs.VanillaPackResourcesBuilder/]: Assets URL 'union:/D:/McMod/.gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.20.1-47.4.0_mapped_official_1.20.1/forge-1.20.1-47.4.0_mapped_official_1.20.1.jar%23191!/data/.mcassetsroot' uses unexpected schema
+[2011月2026 10:49:15.715] [Render thread/INFO] [com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService/]: Environment: authHost='https://authserver.mojang.com', accountsHost='https://api.mojang.com', sessionHost='https://sessionserver.mojang.com', servicesHost='https://api.minecraftservices.com', name='PROD'
+[2011月2026 10:49:15.727] [Render thread/INFO] [net.minecraft.client.Minecraft/]: Setting user: Dev
+[2011月2026 10:49:15.863] [Render thread/INFO] [net.minecraft.client.Minecraft/]: Backend library: LWJGL version 3.3.1 build 7
+[2011月2026 10:49:16.127] [modloading-worker-0/INFO] [parkourcombat.adapter/]: [ParkourAdapter] initialized side=SERVER parCoolVersion=3.4.3.3
+[2011月2026 10:49:16.127] [modloading-worker-0/INFO] [parkourcombat.adapter/]: [ParkourAdapter] initialized side=CLIENT parCoolVersion=3.4.3.3
+[2011月2026 10:49:16.135] [modloading-worker-0/INFO] [net.minecraftforge.common.ForgeMod/FORGEMOD]: Forge mod loading, version 47.4.0, for MC 1.20.1 with MCP 20230612.114412
+[2011月2026 10:49:16.136] [modloading-worker-0/INFO] [net.minecraftforge.common.MinecraftForge/FORGE]: MinecraftForge v47.4.0 Initialized
+[2011月2026 10:49:17.133] [Render thread/INFO] [net.minecraftforge.gametest.ForgeGameTestHooks/]: Enabled Gametest Namespaces: [parkourcombat]

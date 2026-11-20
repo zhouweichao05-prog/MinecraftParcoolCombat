@@ -1,0 +1,8 @@
+package com.MrGhost.parkourCombat.combat;
+
+public enum CombatTargetTrust {
+    CLIENT_REPORTED_TARGET,
+    SERVER_OBSERVED_ATTACK_TARGET,
+    SERVER_DAMAGE_OBSERVED_TARGET,
+    SERVER_SPATIALLY_VALIDATED_TARGET
+}

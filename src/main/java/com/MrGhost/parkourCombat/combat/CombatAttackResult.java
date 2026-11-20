@@ -1,0 +1,11 @@
+package com.MrGhost.parkourCombat.combat;
+
+public enum CombatAttackResult {
+    REQUEST_RECEIVED,
+    NO_REQUESTED_TARGETS,
+    NO_ATTACK_EVENT_OBSERVED,
+    TARGET_OBSERVED,
+    DAMAGE_EVENT_OBSERVED,
+    DAMAGE_AMOUNT_OBSERVED_POSITIVE,
+    UNKNOWN
+}
