@@ -21,8 +21,26 @@ import org.junit.jupiter.api.Test;
 
 class DebugHudStateTest {
     @Test
-    void localAndServerViewsStaySeparate() {
+    void compactModeShowsOnlyCoreFieldsAndDetailedRestoresThem() {
         DebugHudState state = new DebugHudState();
+        state.setEnabled(true);
+        state.updateClient(clientSnapshot(), 12, 20);
+        state.acceptServer(ClientboundMotionDebugSnapshot.from(serverSnapshot(), 8, 20));
+        state.setCompact(true);
+        state.refresh();
+        assertTrue(text(state.getClientLines()).contains("当前动作"));
+        assertFalse(text(state.getClientLines()).contains("位移"));
+        int compactSize = state.getClientLines().size();
+
+        state.setCompact(false);
+        state.refresh();
+        assertTrue(state.getClientLines().size() > compactSize);
+        assertTrue(text(state.getClientLines()).contains("位移"));
+    }
+
+    @Test
+    void localAndServerViewsStaySeparate() {
+        DebugHudState state = new DebugHudState(); state.setCompact(false);
         state.setEnabled(true);
         state.updateClient(clientSnapshot(), 12, 20);
         state.acceptServer(ClientboundMotionDebugSnapshot.from(serverSnapshot(), 8, 20));
@@ -41,7 +59,7 @@ class DebugHudStateTest {
 
     @Test
     void missingServerSnapshotShowsNoSnapshotWithoutClientFallback() {
-        DebugHudState state = new DebugHudState();
+        DebugHudState state = new DebugHudState(); state.setCompact(false);
         state.setEnabled(true);
         state.updateClient(clientSnapshot(), 12, 20);
         state.acceptServer(ClientboundMotionDebugSnapshot.empty());
@@ -53,7 +71,7 @@ class DebugHudStateTest {
 
     @Test
     void staleServerDataIsMarkedAndEventuallyCleared() {
-        DebugHudState state = new DebugHudState();
+        DebugHudState state = new DebugHudState(); state.setCompact(false);
         state.setEnabled(true);
         state.acceptServer(ClientboundMotionDebugSnapshot.from(serverSnapshot(), 8, 20));
         for (int i = 0; i < DebugHudState.STALE_AFTER_TICKS + 1; i++) {
@@ -73,7 +91,7 @@ class DebugHudStateTest {
 
     @Test
     void localSnapshotDoesNotGetFilledByServerData() {
-        DebugHudState state = new DebugHudState();
+        DebugHudState state = new DebugHudState(); state.setCompact(false);
         state.setEnabled(true);
         state.acceptServer(ClientboundMotionDebugSnapshot.from(serverSnapshot(), 8, 20));
         state.refresh();
@@ -85,7 +103,7 @@ class DebugHudStateTest {
 
     @Test
     void disableAndClearRemoveBothViews() {
-        DebugHudState state = new DebugHudState();
+        DebugHudState state = new DebugHudState(); state.setCompact(false);
         state.setEnabled(true);
         state.updateClient(clientSnapshot(), 12, 20);
         state.acceptServer(ClientboundMotionDebugSnapshot.from(serverSnapshot(), 8, 20));

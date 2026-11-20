@@ -41,6 +41,35 @@ public final class DebugHudState {
 
     private List<HudLine> clientLines = List.of();
     private List<HudLine> serverLines = List.of();
+    private List<HudLine> compactClientLines = List.of();
+    private List<HudLine> compactServerLines = List.of();
+    private boolean compact = true;
+    private int detailPage;
+
+    public boolean isCompact() {
+        return compact;
+    }
+
+    public void setCompact(boolean compact) {
+        this.compact = compact;
+        this.detailPage = 0;
+    }
+
+    public void toggleCompact() {
+        setCompact(!compact);
+    }
+
+    public int detailPage() {
+        return detailPage;
+    }
+
+    public void pageDown() {
+        if (!compact) detailPage++;
+    }
+
+    public void pageUp() {
+        if (!compact && detailPage > 0) detailPage--;
+    }
 
     public boolean isEnabled() {
         return enabled;
@@ -119,14 +148,16 @@ public final class DebugHudState {
         }
         clientLines = buildClientLines();
         serverLines = buildServerLines();
+        compactClientLines = buildCompactClientLines();
+        compactServerLines = buildCompactServerLines();
     }
 
     public List<HudLine> getClientLines() {
-        return clientLines;
+        return compact ? compactClientLines : clientLines;
     }
 
     public List<HudLine> getServerLines() {
-        return serverLines;
+        return compact ? compactServerLines : serverLines;
     }
 
     public int getServerAgeTicks() {
@@ -299,6 +330,58 @@ public final class DebugHudState {
             case "SERVER" -> "服务端观察数据";
             default -> "未知来源";
         };
+    }
+
+    private List<HudLine> buildCompactClientLines() {
+        List<HudLine> lines = new ArrayList<>();
+        MotionSnapshot snapshot = clientSnapshot;
+        if (snapshot == null) {
+            lines.add(new HudLine("当前动作：无数据", UNKNOWN));
+            return Collections.unmodifiableList(lines);
+        }
+        ParkourActionState action = snapshot.actionState();
+        lines.add(new HudLine("当前动作：" + (action == null ? "无特殊动作" : actionName(action.type().name())), WHITE));
+        lines.add(new HudLine("动作阶段：" + (action == null ? "无" : phaseName(action.phase().name())), WHITE));
+        lines.add(new HudLine("水平速度：" + format(snapshot.horizontalSpeed()), WHITE));
+        lines.add(new HudLine("垂直速度：" + format(snapshot.velocityY()), WHITE));
+        lines.add(new HudLine("数据来源：" + sourceName(snapshot.source().name()), WHITE));
+        return Collections.unmodifiableList(lines);
+    }
+
+    private List<HudLine> buildCompactServerLines() {
+        List<HudLine> lines = new ArrayList<>();
+        ClientboundMotionDebugSnapshot snapshot = serverSnapshot;
+        if (snapshot == null) {
+            lines.add(new HudLine("服务端数据：无数据", UNKNOWN));
+        } else {
+            lines.add(new HudLine("服务端状态：" + (isServerStale() ? "数据已过期" : "有效"),
+                    isServerStale() ? UNKNOWN : HIGH));
+            lines.add(new HudLine("当前动作：" + (snapshot.hasAction()
+                    ? actionName(snapshot.actionType()) : "无特殊动作"), WHITE));
+            lines.add(new HudLine("动作阶段：" + (snapshot.hasAction()
+                    ? phaseName(snapshot.actionPhase()) : "无"), WHITE));
+            lines.add(new HudLine("水平速度：" + format(snapshot.horizontalSpeed()), WHITE));
+            lines.add(new HudLine("垂直速度：" + format(snapshot.velocityY()), WHITE));
+        }
+        ClientboundCombatDebugSnapshot combat = combatSnapshot;
+        if (combat == null) {
+            lines.add(new HudLine("攻击请求：尚未观察到", UNKNOWN));
+        } else {
+            lines.add(new HudLine("攻击编号：" + combat.attackId(), WHITE));
+            lines.add(new HudLine("攻击阶段：" + phaseName(combat.phase()), WHITE));
+            lines.add(new HudLine("攻击结果：" + resultName(combat.result()), WHITE));
+            lines.add(new HudLine("连击：" + combat.comboCurrent() + " / " + combat.comboTotal(), WHITE));
+            lines.add(new HudLine("武器：" + truncate(empty(combat.weaponId()), 24), WHITE));
+            lines.add(new HudLine("请求/观察目标：" + combat.requestedTargets()
+                    + " / " + combat.observedTargets(), WHITE));
+            lines.add(new HudLine("攻击归属：无法确认", LOW));
+            lines.add(new HudLine("处理器：" + handlerName(combat.handlerState()), WHITE));
+        }
+        return Collections.unmodifiableList(lines);
+    }
+
+    private static String truncate(String value, int max) {
+        return value.length() <= max ? value : value.substring(0, Math.max(0, max - 3)) + "...";
     }
 
     private static String trustName(String value) {

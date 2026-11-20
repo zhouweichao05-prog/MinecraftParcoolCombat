@@ -87,6 +87,17 @@ public final class ClientDebugTick {
             return;
         }
 
+        if (ClientDebugHud.DETAIL.consumeClick()) {
+            STATE.toggleCompact();
+            STATE.refresh();
+        }
+        if (ClientDebugHud.PAGE_UP.consumeClick()) {
+            STATE.pageUp();
+        }
+        if (ClientDebugHud.PAGE_DOWN.consumeClick()) {
+            STATE.pageDown();
+        }
+
         tickCounter++;
         ParCoolActionAdapter client = ParkourAdapterEvents.getClientAdapter();
         MotionSnapshot local = null;

@@ -23,6 +23,24 @@ public final class ClientDebugHud {
             GLFW.GLFW_KEY_F10,
             CATEGORY
     );
+    public static final KeyMapping DETAIL = new KeyMapping(
+            "key.parkourcombat.toggle_hud_detail",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_F9,
+            CATEGORY
+    );
+    public static final KeyMapping PAGE_UP = new KeyMapping(
+            "key.parkourcombat.hud_page_up",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_F7,
+            CATEGORY
+    );
+    public static final KeyMapping PAGE_DOWN = new KeyMapping(
+            "key.parkourcombat.hud_page_down",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_F8,
+            CATEGORY
+    );
 
     private ClientDebugHud() {
     }
@@ -30,6 +48,9 @@ public final class ClientDebugHud {
     @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(TOGGLE);
+        event.register(DETAIL);
+        event.register(PAGE_UP);
+        event.register(PAGE_DOWN);
     }
 
     @SubscribeEvent

@@ -1,4 +1,7 @@
-{
+﻿{
   "key.categories.parkourcombat.debug": "跑酷战斗调试",
-  "key.parkourcombat.toggle_motion_hud": "切换跑酷战斗观察 HUD"
+  "key.parkourcombat.toggle_motion_hud": "切换跑酷战斗观察 HUD",
+  "key.parkourcombat.toggle_hud_detail": "切换详细/紧凑模式",
+  "key.parkourcombat.hud_page_up": "HUD 上一页",
+  "key.parkourcombat.hud_page_down": "HUD 下一页"
 }

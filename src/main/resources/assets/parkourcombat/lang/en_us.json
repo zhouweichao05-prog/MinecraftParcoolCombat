@@ -1,4 +1,7 @@
-{
+﻿{
   "key.categories.parkourcombat.debug": "ParkourCombat Debug",
-  "key.parkourcombat.toggle_motion_hud": "Toggle Motion Debug HUD"
+  "key.parkourcombat.toggle_motion_hud": "Toggle Motion Debug HUD",
+  "key.parkourcombat.toggle_hud_detail": "Toggle HUD Detail Mode",
+  "key.parkourcombat.hud_page_up": "HUD Previous Page",
+  "key.parkourcombat.hud_page_down": "HUD Next Page"
 }
