@@ -283,6 +283,92 @@ class CombatGate214CompletionTest {
         assertFalse(lookup.truncated());
     }
 
+    @Test
+    void mixedSourceLookup511512513BoundaryThroughTracker() {
+        UUID player511 = UUID.randomUUID();
+        CombatAttackTracker tracker511 = new CombatAttackTracker();
+        for (int i = 0; i < 7; i++) {
+            tracker511.seedRecentContextForTest(player511,
+                    contextWithUniqueUuids(player511, 63, false));
+        }
+        tracker511.seedRecentContextForTest(player511,
+                contextWithUniqueUuids(player511, 54, false));
+        assertEquals(511, tracker511.recentLookupForTest(player511).size());
+        assertFalse(tracker511.recentLookupForTest(player511).truncated());
+
+        UUID player512 = UUID.randomUUID();
+        CombatAttackTracker tracker512 = new CombatAttackTracker();
+        for (int i = 0; i < 7; i++) {
+            tracker512.seedRecentContextForTest(player512,
+                    contextWithUniqueUuids(player512, 63, false));
+        }
+        tracker512.seedRecentContextForTest(player512,
+                contextWithUniqueUuids(player512, 55, false));
+        assertEquals(512, tracker512.recentLookupForTest(player512).size());
+        assertFalse(tracker512.recentLookupForTest(player512).truncated());
+
+        UUID player513 = UUID.randomUUID();
+        CombatAttackTracker tracker513 = new CombatAttackTracker();
+        for (int i = 0; i < 7; i++) {
+            tracker513.seedRecentContextForTest(player513,
+                    contextWithUniqueUuids(player513, 63, false));
+        }
+        tracker513.seedRecentContextForTest(player513,
+                contextWithUniqueUuids(player513, 56, false));
+        assertEquals(512, tracker513.recentLookupForTest(player513).size());
+        assertTrue(tracker513.recentLookupForTest(player513).truncated());
+    }
+
+    @Test
+    void duplicateParentDoesNotConsumeMixedLookupCapacity() {
+        UUID player = UUID.randomUUID();
+        CombatAttackTracker tracker = new CombatAttackTracker();
+        for (int i = 0; i < 7; i++) {
+            tracker.seedRecentContextForTest(player, contextWithUniqueUuids(player, 63, false));
+        }
+        tracker.seedRecentContextForTest(player, contextWithUniqueUuids(player, 55, true));
+        assertEquals(511, tracker.recentLookupForTest(player).size());
+        assertFalse(tracker.recentLookupForTest(player).truncated());
+    }
+
+    @Test
+    void subsetRelationsHaveExplicitOrdinaryValues() {
+        CombatTargetRegistry registry = filledRegistry();
+        registry.admit(UUID.randomUUID(), CombatTargetState.Kind.PART, UUID.randomUUID(), false);
+        assertEquals(1L, registry.targetBudgetOverflowCount());
+        assertEquals(1L, registry.partTargetOverflowCount());
+        registry.recordOverflowEvent(true);
+        assertEquals(1L, registry.overflowEventCount());
+        assertEquals(1L, registry.overflowCanceledEventCount());
+
+        UUID player = UUID.randomUUID();
+        UUID part = UUID.randomUUID();
+        UUID parent = UUID.randomUUID();
+        CombatAttackTracker tracker = new CombatAttackTracker();
+        tracker.seedRecentContextForTest(player, partContext(player, part, parent));
+        tracker.dispatchAttackForTest(player, part, parent, true, false);
+        tracker.dispatchAttackForTest(player, parent, null, false, true);
+        assertEquals(2L, tracker.lateEventCount());
+        assertEquals(1L, tracker.latePartEventCount());
+        assertEquals(1L, tracker.lateCanceledEventCount());
+        assertTrue(tracker.latePartEventCount() <= tracker.lateEventCount());
+        assertTrue(tracker.lateCanceledEventCount() <= tracker.lateEventCount());
+    }
+
+    private static CombatAttackContext contextWithUniqueUuids(UUID player, int normals,
+                                                               boolean duplicateParent) {
+        Set<UUID> targets = new LinkedHashSet<>();
+        for (int i = 0; i < normals; i++) {
+            targets.add(UUID.randomUUID());
+        }
+        UUID part = UUID.randomUUID();
+        UUID parent = duplicateParent && !targets.isEmpty()
+                ? targets.iterator().next() : UUID.randomUUID();
+        CombatAttackSession session = session(player, 1L, targets, Set.of(part),
+                Map.of(part, parent), CombatTargetCoverage.PARTIAL_PART);
+        return session.finish(CombatAttackEndReason.NORMAL_FINISH, 0L);
+    }
+
     private static CombatTargetRegistry filledRegistry() {
         CombatTargetRegistry registry = new CombatTargetRegistry();
         for (int i = 0; i < 64; i++) {
