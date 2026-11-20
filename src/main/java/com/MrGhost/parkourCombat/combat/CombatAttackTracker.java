@@ -105,18 +105,10 @@ public final class CombatAttackTracker {
         if (state == null) {
             return;
         }
-        LateMatch lateMatch = isLateTarget(state, target);
-        if (lateMatch == LateMatch.LATE_MATCHED) {
-            recordLate(target, canceled);
-            return;
-        }
-        if (lateMatch == LateMatch.UNKNOWN_TRUNCATED) {
-            recordLateUnknown();
-            return;
-        }
-        if (state.active != null) {
-            state.active.observeAttackTarget(target, canceled);
-        }
+        boolean part = target instanceof net.minecraftforge.entity.PartEntity<?>;
+        UUID parentUuid = part && ((net.minecraftforge.entity.PartEntity<?>) target).getParent() != null
+                ? ((net.minecraftforge.entity.PartEntity<?>) target).getParent().getUUID() : null;
+        dispatchAttack(state, target.getUUID(), parentUuid, part, canceled);
     }
 
     public void onLivingEvent(ServerPlayer attacker, LivingEntity target,
@@ -130,21 +122,43 @@ public final class CombatAttackTracker {
         if (state == null) {
             return;
         }
-        LateMatch lateMatch = isLateTarget(state, target);
-        if (lateMatch == LateMatch.LATE_MATCHED) {
-            recordLate(target, canceled);
+        CombatEventType eventType = switch (type) {
+            case LIVING_ATTACK -> CombatEventType.LIVING_ATTACK;
+            case LIVING_HURT -> CombatEventType.LIVING_HURT;
+            case LIVING_DAMAGE -> CombatEventType.LIVING_DAMAGE;
+        };
+        dispatchLiving(state, target.getUUID(), eventType, amount, canceled);
+    }
+
+    private void dispatchAttack(PlayerState state, UUID targetUuid, UUID parentUuid,
+                                boolean part, boolean canceled) {
+        LateMatch match = isLateTarget(state, targetUuid, parentUuid, part);
+        if (match == LateMatch.LATE_MATCHED) {
+            recordLate(part, canceled);
             return;
         }
-        if (lateMatch == LateMatch.UNKNOWN_TRUNCATED) {
+        if (match == LateMatch.UNKNOWN_TRUNCATED) {
             recordLateUnknown();
             return;
         }
         if (state.active != null) {
-            state.active.observeLivingEvent(target, switch (type) {
-                case LIVING_ATTACK -> CombatEventType.LIVING_ATTACK;
-                case LIVING_HURT -> CombatEventType.LIVING_HURT;
-                case LIVING_DAMAGE -> CombatEventType.LIVING_DAMAGE;
-            }, amount, canceled);
+            state.active.observeAttackTarget(targetUuid, part, parentUuid, canceled);
+        }
+    }
+
+    private void dispatchLiving(PlayerState state, UUID targetUuid, CombatEventType type,
+                                float amount, boolean canceled) {
+        LateMatch match = isLateTarget(state, targetUuid, null, false);
+        if (match == LateMatch.LATE_MATCHED) {
+            recordLate(false, canceled);
+            return;
+        }
+        if (match == LateMatch.UNKNOWN_TRUNCATED) {
+            recordLateUnknown();
+            return;
+        }
+        if (state.active != null) {
+            state.active.observeLivingEvent(targetUuid, type, amount, canceled);
         }
     }
 
@@ -267,18 +281,7 @@ public final class CombatAttackTracker {
         if (state == null) {
             return;
         }
-        LateMatch match = isLateTarget(state, targetUuid, parentUuid, part);
-        if (match == LateMatch.LATE_MATCHED) {
-            recordLate(part, canceled);
-            return;
-        }
-        if (match == LateMatch.UNKNOWN_TRUNCATED) {
-            recordLateUnknown();
-            return;
-        }
-        if (state.active != null) {
-            state.active.observeAttackTarget(targetUuid, part, parentUuid, canceled);
-        }
+        dispatchAttack(state, targetUuid, parentUuid, part, canceled);
     }
 
     void dispatchLivingForTest(UUID playerId, UUID targetUuid, CombatEventType type,
@@ -287,18 +290,7 @@ public final class CombatAttackTracker {
         if (state == null) {
             return;
         }
-        LateMatch match = isLateTarget(state, targetUuid, null, false);
-        if (match == LateMatch.LATE_MATCHED) {
-            recordLate(false, canceled);
-            return;
-        }
-        if (match == LateMatch.UNKNOWN_TRUNCATED) {
-            recordLateUnknown();
-            return;
-        }
-        if (state.active != null) {
-            state.active.observeLivingEvent(targetUuid, type, amount, canceled);
-        }
+        dispatchLiving(state, targetUuid, type, amount, canceled);
     }
 
     private LateMatch isLateTarget(PlayerState state, net.minecraft.world.entity.Entity target) {
