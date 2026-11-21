@@ -14,7 +14,10 @@ public enum ParkourActionType {
     WALL_RUN,
     WALL_RUN_HORIZONTAL,
     WALL_RUN_VERTICAL,
-    WALL_JUMP;
+    WALL_JUMP,
+    DIVE,
+    DODGE,
+    HANG_DOWN;
 
     public boolean isWallRun() {
         return this == WALL_RUN || this == WALL_RUN_HORIZONTAL || this == WALL_RUN_VERTICAL;

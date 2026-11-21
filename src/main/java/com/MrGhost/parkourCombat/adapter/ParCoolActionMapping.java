@@ -1,7 +1,10 @@
 package com.MrGhost.parkourCombat.adapter;
 
 import com.alrex.parcool.common.action.Action;
+import com.alrex.parcool.common.action.impl.Dive;
+import com.alrex.parcool.common.action.impl.Dodge;
 import com.alrex.parcool.common.action.impl.FastRun;
+import com.alrex.parcool.common.action.impl.HangDown;
 import com.alrex.parcool.common.action.impl.HorizontalWallRun;
 import com.alrex.parcool.common.action.impl.Slide;
 import com.alrex.parcool.common.action.impl.Vault;
@@ -34,6 +37,9 @@ public final class ParCoolActionMapping {
             register(HorizontalWallRun.class, ParkourActionType.WALL_RUN_HORIZONTAL);
             register(VerticalWallRun.class, ParkourActionType.WALL_RUN_VERTICAL);
             register(WallJump.class, ParkourActionType.WALL_JUMP);
+            register(Dive.class, ParkourActionType.DIVE);
+            register(Dodge.class, ParkourActionType.DODGE);
+            register(HangDown.class, ParkourActionType.HANG_DOWN);
             this.available = true;
         } catch (Throwable error) {
             this.available = false;
