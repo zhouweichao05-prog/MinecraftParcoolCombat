@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 public final class ParkourActionTracker {
     private static final int TERMINAL_TTL_TICKS = 40;
     private static final int SYNC_LOST_TIMEOUT_TICKS = 2;
+    private static final int MAX_EVENT_ONLY_ACTIVE_TICKS = 1200;
 
     private final boolean serverSide;
     private final Consumer<ParkourActionState> listener;
@@ -132,6 +133,24 @@ public final class ParkourActionTracker {
             action.evidence = "CANCEL_REQUESTED";
             action.changedGameTime = gameTime;
             notifyListener(action.toState());
+        }
+    }
+
+    /**
+     * Event-driven aging. This does not query ParCool actions; it only prevents
+     * a lost Finish event from leaving an ACTIVE state forever.
+     */
+    public void onEventOnlyTick(long gameTime) {
+        ageTerminalStates();
+        List<MutableAction> snapshot = new ArrayList<>(active.values());
+        for (MutableAction action : snapshot) {
+            action.ticks++;
+            if (action.ticks > MAX_EVENT_ONLY_ACTIVE_TICKS) {
+                active.remove(action.type);
+                putTerminal(action.type, ParkourActionPhase.UNKNOWN, false,
+                        action.source, action.trust, action.serverAuthoritative, true,
+                        "EVENT_ONLY_TTL", action.startedGameTime, gameTime, action.ticks);
+            }
         }
     }
 

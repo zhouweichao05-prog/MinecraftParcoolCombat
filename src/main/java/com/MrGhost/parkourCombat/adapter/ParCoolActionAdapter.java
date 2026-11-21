@@ -1,6 +1,7 @@
 package com.MrGhost.parkourCombat.adapter;
 
 import com.MrGhost.parkourCombat.ParkourCombat;
+import com.MrGhost.parkourCombat.combat.special.SpecialAttackService;
 import com.alrex.parcool.common.action.Action;
 import com.alrex.parcool.common.capability.Parkourability;
 import java.util.Collections;
@@ -75,6 +76,11 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         PlayerTrackers trackers = players.get(player.getUUID());
         if (trackers != null) {
             trackers.actions.onFinish(type, gameTime(player));
+            if (!clientSide && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                trackers.actions.getState(type).ifPresent(state ->
+                        SpecialAttackService.onActionFinish(serverPlayer, type, state.phase(),
+                                gameTime(player)));
+            }
         }
     }
 
@@ -117,11 +123,7 @@ public class ParCoolActionAdapter implements ParkourActionAdapter {
         }
 
         long gameTime = gameTime(player);
-        Parkourability parkourability = Parkourability.get(player);
-        Set<ParkourActionType> doing = parkourability == null
-                ? Set.of()
-                : mapping.activeTypes(parkourability);
-        trackers.actions.onTick(gameTime, doing);
+        trackers.actions.onEventOnlyTick(gameTime);
 
         ParkourActionState primary = ParkourActionSelection.select(trackers.actions);
         trackers.motion.tick(player, gameTime, primary);

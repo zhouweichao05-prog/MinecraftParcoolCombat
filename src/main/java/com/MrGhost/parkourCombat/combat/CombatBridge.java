@@ -3,6 +3,7 @@ package com.MrGhost.parkourCombat.combat;
 import com.MrGhost.parkourCombat.ParkourCombat;
 import com.MrGhost.parkourCombat.adapter.MotionSnapshot;
 import com.MrGhost.parkourCombat.adapter.ParkourAdapterEvents;
+import com.MrGhost.parkourCombat.combat.special.SpecialAttackService;
 import java.util.Optional;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
@@ -197,6 +198,7 @@ public final class CombatBridge {
             return;
         }
         TRACKER.onAttackEntity(player, event.getTarget(), event.isCanceled());
+        SpecialAttackService.onAttack(player, CombatAttackIdGenerator.nextId());
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)

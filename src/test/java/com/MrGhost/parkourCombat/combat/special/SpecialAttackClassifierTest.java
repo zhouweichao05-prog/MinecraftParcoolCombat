@@ -17,6 +17,38 @@ class SpecialAttackClassifierTest {
     private static final UUID PLAYER = UUID.randomUUID();
 
     @Test
+    void emptyAndNullActiveCollectionsAreSafe() {
+        SpecialAttackWindowTracker windows = new SpecialAttackWindowTracker();
+        MotionSnapshot motion = motion(0.0D, 0.0D);
+        assertEquals(SpecialAttackStyle.UNKNOWN,
+                SpecialAttackClassifier.classify(1L, PLAYER, null, windows, 1L, motion, 0.0D, false).style());
+        assertEquals(SpecialAttackStyle.UNKNOWN,
+                SpecialAttackClassifier.classify(2L, PLAYER, java.util.Set.of(), windows, 1L, motion, 0.0D, false).style());
+        assertEquals(SpecialAttackStyle.UNKNOWN,
+                SpecialAttackClassifier.classify(3L, PLAYER, java.util.Collections.emptySet(), windows, 1L, motion, 0.0D, false).style());
+        java.util.Set<ParkourActionType> hash = new java.util.HashSet<>();
+        hash.add(ParkourActionType.FAST_RUN);
+        assertEquals(SpecialAttackStyle.KINETIC,
+                SpecialAttackClassifier.classify(4L, PLAYER, hash, windows, 1L, motion(0.5D, 0.0D), 0.0D, false).style());
+        assertEquals(SpecialAttackStyle.KINETIC,
+                SpecialAttackClassifier.classify(5L, PLAYER, EnumSet.of(ParkourActionType.FAST_RUN),
+                        windows, 1L, motion(0.5D, 0.0D), 0.0D, false).style());
+    }
+
+    @Test
+    void canceledInterruptedAndUnknownDoNotCreateWindows() {
+        SpecialAttackWindowTracker windows = new SpecialAttackWindowTracker();
+        windows.recordFinish(PLAYER, ParkourActionType.WALL_JUMP,
+                com.MrGhost.parkourCombat.adapter.ParkourActionPhase.CANCELLED, 1L);
+        windows.recordFinish(PLAYER, ParkourActionType.DODGE,
+                com.MrGhost.parkourCombat.adapter.ParkourActionPhase.INTERRUPTED, 1L);
+        windows.recordFinish(PLAYER, ParkourActionType.WALL_JUMP,
+                com.MrGhost.parkourCombat.adapter.ParkourActionPhase.UNKNOWN, 1L);
+        assertFalse(windows.consume(PLAYER, SpecialAttackStyle.WALL_JUMP, 2L));
+        assertFalse(windows.consume(PLAYER, SpecialAttackStyle.DODGE, 2L));
+    }
+
+    @Test
     void activeFastRunClassifiesKineticWithCappedDamage() {
         SpecialAttackContext context = SpecialAttackClassifier.classify(7L, PLAYER,
                 EnumSet.of(ParkourActionType.FAST_RUN), new SpecialAttackWindowTracker(), 100L,

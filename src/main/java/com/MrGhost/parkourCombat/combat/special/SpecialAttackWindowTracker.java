@@ -19,6 +19,16 @@ public final class SpecialAttackWindowTracker {
     private final Map<UUID, EnumMap<SpecialAttackStyle, Long>> windows = new HashMap<>();
 
     public void recordFinish(UUID playerId, ParkourActionType action, long now) {
+        recordFinish(playerId, action,
+                com.MrGhost.parkourCombat.adapter.ParkourActionPhase.FINISHED, now);
+    }
+
+    public void recordFinish(UUID playerId, ParkourActionType action,
+                             com.MrGhost.parkourCombat.adapter.ParkourActionPhase phase,
+                             long now) {
+        if (phase != com.MrGhost.parkourCombat.adapter.ParkourActionPhase.FINISHED) {
+            return;
+        }
         if (playerId == null || now < 0L) {
             return;
         }

@@ -22,9 +22,10 @@ public final class SpecialAttackClassifier {
                                                 MotionSnapshot motion,
                                                 double fallDistance,
                                                 boolean falling) {
-        EnumSet<ParkourActionType> actions = active == null
-                ? EnumSet.noneOf(ParkourActionType.class)
-                : EnumSet.copyOf(active);
+        EnumSet<ParkourActionType> actions = EnumSet.noneOf(ParkourActionType.class);
+        if (active != null) {
+            actions.addAll(active);
+        }
         Set<SpecialAttackStyle> windowStyles = windows == null
                 ? Set.of() : windows.availableStyles(playerId, now);
         double hSpeed = motion == null ? 0.0D : Math.abs(motion.horizontalSpeed());
